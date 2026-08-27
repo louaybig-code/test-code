@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- StudioPilote brand fonts — Inter (UI) + Sora (display headings) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StudioPilote — Agile Project Management</title>
+    <meta name="description" content="StudioPilote — Kanban, Backlog, Calendar, Analytics and Team Channels in one agile workspace." />
+    <link rel="icon" type="image/png" href="/studiopilot-dark.png" />
+    <script>
+      (function() {
+        try {
+          var _fetch = window.fetch;
+          function patchFetch(target) {
+            if (!target) return;
+            try {
+              Object.defineProperty(target, 'fetch', {
+                get: function() { return _fetch; },
+                set: function(v) { _fetch = v; },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (e) {}
+          }
+
+          if (window.Window && window.Window.prototype) {
+            patchFetch(window.Window.prototype);
+          }
+          patchFetch(window);
+          if (typeof globalThis !== 'undefined') {
+            patchFetch(globalThis);
+          }
+        } catch (err) {
+          console.warn('Fetch patch error:', err);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+/* Use the .dark class on <html> for dark mode toggling */
+@variant dark (&:where(.dark, .dark *));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   StudioPilote Design System — Brand Token Layer
+   Charte Graphique v1 · Charcoal × Orange × Teal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand Core ────────────────────────────────────────────────────── */
+  --sp-charcoal:        #2C3147;   /* "Studio" wordmark · primary dark */
+  --sp-charcoal-90:     #323751;
+  --sp-charcoal-80:     #3D4460;
+  --sp-charcoal-60:     #5A6180;
+  --sp-charcoal-40:     #7E88A3;
+  --sp-charcoal-20:     #BDC4D4;
+  --sp-charcoal-10:     #DEE2EC;
+
+  --sp-orange:          #E8531A;   /* "P" in Pilot · CTA */
+  --sp-orange-110:      #CC4515;   /* pressed */
+  --sp-orange-90:       #F06535;   /* hover */
+  --sp-orange-70:       #F48257;
+  --sp-orange-40:       #F8B090;
+  --sp-orange-15:       rgba(232, 83, 26, 0.15);
+  --sp-orange-08:       rgba(232, 83, 26, 0.08);
+
+  --sp-teal:            #1A8C8C;   /* "ilot" + compass · secondary */
+  --sp-teal-110:        #147070;   /* pressed */
+  --sp-teal-90:         #21AAAA;   /* hover */
+  --sp-teal-70:         #3DBDBD;
+  --sp-teal-40:         #7DD9D9;
+  --sp-teal-15:         rgba(26, 140, 140, 0.15);
+  --sp-teal-08:         rgba(26, 140, 140, 0.08);
+
+  /* ── Light Mode Surfaces ────────────────────────────────────────────── */
+  --sp-bg:              #F4F6FA;
+  --sp-surface:         #FFFFFF;
+  --sp-surface-2:       #EEF1F7;
+  --sp-surface-3:       #E4E8F2;
+  --sp-border:          #D8DDED;
+  --sp-border-strong:   #BEC6DC;
+  --sp-text:            #1A1D2E;
+  --sp-text-secondary:  #4B5269;
+  --sp-text-muted:      #7B85A0;
+  --sp-text-disabled:   #B0B8CC;
+
+  /* ── Semantic ─────────────────────────────────────────────────────── */
+  --sp-success:         #10B981;
+  --sp-warning:         #F59E0B;
+  --sp-danger:          #EF4444;
+  --sp-info:            #3B82F6;
+
+  /* ── Radius ───────────────────────────────────────────────────────── */
+  --sp-radius-sm:       6px;
+  --sp-radius-md:       10px;
+  --sp-radius-lg:       14px;
+  --sp-radius-xl:       18px;
+  --sp-radius-2xl:      24px;
+  --sp-radius-full:     9999px;
+
+  /* ── Shadow ───────────────────────────────────────────────────────── */
+  --sp-shadow-sm:       0 1px 3px rgba(44,49,71,0.08), 0 1px 2px rgba(44,49,71,0.04);
+  --sp-shadow-md:       0 4px 12px rgba(44,49,71,0.10), 0 2px 6px rgba(44,49,71,0.06);
+  --sp-shadow-lg:       0 10px 28px rgba(44,49,71,0.13), 0 4px 10px rgba(44,49,71,0.06);
+  --sp-shadow-orange:   0 4px 16px rgba(232, 83, 26, 0.28);
+  --sp-shadow-teal:     0 4px 16px rgba(26, 140, 140, 0.22);
+}
+
+/* ── Dark Mode Overrides ────────────────────────────────────────────────── */
+.dark {
+  --sp-bg:              #0F1117;
+  --sp-surface:         #1A1D2E;
+  --sp-surface-2:       #222638;
+  --sp-surface-3:       #2C3147;
+  --sp-border:          #323751;
+  --sp-border-strong:   #454D6A;
+  --sp-text:            #E8EBF4;
+  --sp-text-secondary:  #9AA3BE;
+  --sp-text-muted:      #6B7494;
+  --sp-text-disabled:   #454D6A;
+
+  --sp-shadow-sm:       0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20);
+  --sp-shadow-md:       0 4px 14px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.20);
+  --sp-shadow-lg:       0 12px 32px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Typography — Inter (UI) + Sora (Display)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display headings use Sora */
+h1, h2, .sp-display {
+  font-family: 'Sora', 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+h3, h4, h5 {
+  font-family: 'Sora', 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* ── Utility Classes ───────────────────────────────────────────────────── */
+
+/* Scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Custom thin scrollbar */
+.sp-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+.sp-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.sp-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--sp-border);
+  border-radius: 99px;
+}
+.sp-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--sp-teal-40); }
+
+/* Smooth theme transitions for bg/border only */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* No transition on drag elements */
+.no-transition,
+[data-rfd-draggable-id],
+[data-rfd-droppable-id] {
+  transition: none !important;
+}
+
+/* ── SP Component Tokens (as Tailwind-friendly vars) ──────────────────── */
+
+/* Surface card */
+.sp-card {
+  background-color: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-xl);
+  box-shadow: var(--sp-shadow-sm);
+}
+
+/* Divider */
+.sp-divider {
+  border-color: var(--sp-border);
+}
+
+/* Label (section heading) */
+.sp-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sp-text-muted);
+}
+
+/* ── Orange Glow Pulse (loading states) ──────────────────────────────── */
+@keyframes sp-pulse-orange {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 83, 26, 0.40); }
+  50%       { box-shadow: 0 0 0 8px rgba(232, 83, 26, 0.00); }
+}
+.sp-pulse-orange { animation: sp-pulse-orange 2s ease-in-out infinite; }
+
+/* ── Animated skeleton ───────────────────────────────────────────────── */
+@keyframes sp-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.sp-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sp-surface-2) 25%,
+    var(--sp-surface-3) 50%,
+    var(--sp-surface-2) 75%
+  );
+  background-size: 800px 100%;
+  animation: sp-shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--sp-radius-md);
+}

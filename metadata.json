@@ -1,0 +1,6 @@
+{
+  "name": "Smash",
+  "description": "Plateforme SaaS de gestion de projets et collaboration d'équipe agile et puissante.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
