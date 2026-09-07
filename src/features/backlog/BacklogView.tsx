@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Play, CheckCircle2, Plus, Flag, Calendar, Layers, GripVertical, Rocket, Target, X, Pencil } from 'lucide-react';
+import { Play, CheckCircle2, Plus, Flag, Calendar, Layers, GripVertical, Rocket, Target, X, Pencil, Trash2 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Epic, Sprint, Task } from '../../types';
 import { Button } from '../../components/Button';
@@ -254,7 +254,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
   // ─── Drag handlers ───────────────────────────────────────────────────────────
   const handleDragStart = (event: DragStartEvent) => {
     if (!canMoveTask) {
-      toast.error('You do not have permission to move tasks');
+      toast.error('Vous n\'avez pas la permission de déplacer les tâches');
       return;
     }
     setActiveTaskId(event.active.id as string);
@@ -268,7 +268,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
 
     // Double-check permission
     if (!canMoveTask) {
-      toast.error('You do not have permission to move tasks');
+      toast.error('Vous n\'avez pas la permission de déplacer les tâches');
       loadData(); // Reload to revert optimistic update
       return;
     }
@@ -327,9 +327,9 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
         // Backlog reordering: use dedicated reorderBacklog API
         try {
           const taskIds = reordered.map(t => t.id);
-          console.log('📤 Reordering backlog with IDs:', taskIds);
+
           await apiService.reorderBacklog(projectId, taskIds);
-          console.log('✅ Backlog reordered successfully');
+
           toast.success('Ordre sauvegardé');
         } catch (err) {
           console.error('❌ Failed to reorder backlog:', err);
@@ -349,7 +349,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
               })
             )
           );
-          console.log('✅ Sprint order saved via moveTask API');
+
           toast.success('Ordre sauvegardé');
         } catch (err) {
           console.error('❌ Failed to reorder sprint tasks:', err);
@@ -383,7 +383,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
   const handleCreateSprint = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManageSprints) {
-      toast.error('You do not have permission to manage sprints');
+      toast.error('Vous n\'avez pas la permission de gérer les sprints');
       return;
     }
     if (!sprintName.trim()) return;
@@ -405,7 +405,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
 
   const handleStartSprint = async (sprintId: string) => {
     if (!canManageSprints) {
-      toast.error('You do not have permission to manage sprints');
+      toast.error('Vous n\'avez pas la permission de gérer les sprints');
       return;
     }
     try {
@@ -419,7 +419,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
 
   const handleCloseSprint = async (sprintId: string) => {
     if (!canManageSprints) {
-      toast.error('You do not have permission to manage sprints');
+      toast.error('Vous n\'avez pas la permission de gérer les sprints');
       return;
     }
     try {
@@ -433,7 +433,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
 
   const openEditSprint = (sprint: Sprint) => {
     if (!canManageSprints) {
-      toast.error('You do not have permission to manage sprints');
+      toast.error('Vous n\'avez pas la permission de gérer les sprints');
       return;
     }
     setEditingSprint(sprint);
@@ -446,7 +446,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
   const handleUpdateSprint = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManageSprints) {
-      toast.error('You do not have permission to manage sprints');
+      toast.error('Vous n\'avez pas la permission de gérer les sprints');
       return;
     }
     if (!editingSprint || !editSprintName.trim()) return;
@@ -469,6 +469,8 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
   };
 
   // ─── Epic actions ─────────────────────────────────────────────────────────────
+  const [confirmDeleteEpicId, setConfirmDeleteEpicId] = useState<string | null>(null);
+  
   const handleCreateEpic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!epicName.trim()) return;
@@ -480,6 +482,21 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
       loadData();
     } catch (err: any) {
       toast.error(err.message || 'Erreur');
+    }
+  };
+
+  const handleDeleteEpic = async (epicId: string) => {
+    try {
+      await apiService.deleteEpic(epicId);
+      toast.success('Epic supprimé');
+      setConfirmDeleteEpicId(null);
+      // Clear filter if we're filtering by the deleted epic
+      if (activeEpicFilter === epicId) {
+        setActiveEpicFilter(null);
+      }
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la suppression');
     }
   };
 
@@ -521,7 +538,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
               variant="primary" 
               size="sm" 
               icon={<Plus className="w-3.5 h-3.5" />} 
-              onClick={() => canManageSprints ? setIsSprintModalOpen(true) : toast.error('You do not have permission to manage sprints')}
+              onClick={() => canManageSprints ? setIsSprintModalOpen(true) : toast.error('Vous n\'avez pas la permission de gérer les sprints')}
               disabled={!canManageSprints}
             >
               Créer un Sprint
@@ -551,22 +568,57 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
             {epics.map((epic) => {
               const isActive = activeEpicFilter === epic.id;
               const taskCount = allTasks.filter((t) => t.epicId === epic.id).length;
+              const isConfirmingDelete = confirmDeleteEpicId === epic.id;
+              
               return (
-                <button
+                <div
                   key={epic.id}
-                  onClick={() => setActiveEpicFilter(isActive ? null : epic.id)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold text-white border transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold text-white border transition group ${
                     isActive ? 'ring-2 ring-white/30 scale-105' : 'opacity-80 hover:opacity-100'
-                  }`}
+                  } ${isConfirmingDelete ? 'ring-2 ring-rose-500' : ''}`}
                   style={{ backgroundColor: epic.color || '#8b5cf6', borderColor: isActive ? 'white' : 'transparent' }}
-                  title={`Filtrer par epic : ${epic.name}`}
                 >
-                  {epic.name}
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isActive ? 'bg-white/30' : 'bg-black/20'}`}>
-                    {taskCount}
-                  </span>
-                  {isActive && <X className="w-3 h-3 opacity-70" />}
-                </button>
+                  <button
+                    onClick={() => setActiveEpicFilter(isActive ? null : epic.id)}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                    title={`Filtrer par epic : ${epic.name}`}
+                  >
+                    {epic.name}
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isActive ? 'bg-white/30' : 'bg-black/20'}`}>
+                      {taskCount}
+                    </span>
+                    {isActive && <X className="w-3 h-3 opacity-70" />}
+                  </button>
+                  
+                  {/* Delete button - shows on hover */}
+                  {!isConfirmingDelete ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDeleteEpicId(epic.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:scale-110 transition cursor-pointer ml-1"
+                      title="Supprimer cet epic"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1 ml-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleDeleteEpic(epic.id)}
+                        className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition cursor-pointer"
+                      >
+                        Oui
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteEpicId(null)}
+                        className="px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold transition cursor-pointer"
+                      >
+                        Non
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
 
@@ -647,7 +699,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onSelectTas
                           variant="danger" 
                           size="sm" 
                           icon={<CheckCircle2 className="w-3.5 h-3.5" />} 
-                          onClick={() => canManageSprints ? setConfirmCloseId(sprint.id) : toast.error('You do not have permission to manage sprints')}
+                          onClick={() => canManageSprints ? setConfirmCloseId(sprint.id) : toast.error('Vous n\'avez pas la permission de gérer les sprints')}
                           disabled={!canManageSprints}
                         >
                           Clôturer

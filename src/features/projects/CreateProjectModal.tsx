@@ -205,7 +205,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   <select
                     value={row.role}
                     onChange={(e) => updateInviteRow(row.id, 'role', e.target.value)}
-                    className="rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-xs py-2.5 px-2 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                    className="rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm font-medium py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-sm hover:shadow-md hover:border-violet-500/30 transition-all duration-150 cursor-pointer"
                   >
                     <option value="MEMBER">Membre</option>
                     <option value="ADMIN">Admin</option>

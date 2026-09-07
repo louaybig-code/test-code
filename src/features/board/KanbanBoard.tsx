@@ -160,42 +160,113 @@ const SortableColumn: React.FC<{
       }}
       className="flex flex-col shrink-0 rounded-2xl border border-[var(--sp-border)] shadow-md bg-[var(--sp-surface)]"
     >
-      <div 
-        {...attributes}
-        {...listeners}
-        className="flex items-center justify-between px-3 py-3 shrink-0 select-none rounded-t-2xl cursor-move" 
-        style={{ backgroundColor: color }}
-      >
-        {isCollapsed ? (
-          <div 
-            onClick={onToggleCollapse} 
-            className="flex-1 flex items-center justify-center cursor-pointer"
-          >
-            <span
-              className="text-white text-xs font-bold tracking-widest whitespace-nowrap"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+      {/* Column Header with Add Task Button */}
+      <div className="flex flex-col shrink-0 rounded-t-2xl" style={{ backgroundColor: color }}>
+        {/* Title Bar with Collapse */}
+        <div 
+          {...attributes}
+          {...listeners}
+          className="flex items-center justify-between px-3 py-3 select-none cursor-move"
+        >
+          {isCollapsed ? (
+            <div 
+              onClick={onToggleCollapse} 
+              className="flex-1 flex items-center justify-center cursor-pointer"
             >
-              {column.status.name} ({column.tasks.length})
-            </span>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 min-w-0">
-              <h3 className="font-bold text-sm text-white tracking-wide truncate">{column.status.name}</h3>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-black/20 text-white shrink-0">
-                {column.tasks.length}
+              <span
+                className="text-white text-xs font-bold tracking-widest whitespace-nowrap"
+                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+              >
+                {column.status.name} ({column.tasks.length})
               </span>
             </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-bold text-sm text-white tracking-wide truncate">{column.status.name}</h3>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-black/20 text-white shrink-0">
+                  {column.tasks.length}
+                </span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleCollapse();
+                }}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/25 text-white transition cursor-pointer shrink-0 text-lg font-bold leading-none border-0"
+              >
+                −
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Add Task Button in Header - Only shown when not collapsed */}
+        {!isCollapsed && (
+          <div className="px-3 pb-3 flex justify-center">
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleCollapse();
+                if (canCreateTask) {
+                  onQuickCreate();
+                } else {
+                  toast.error('Vous n\'avez pas la permission de créer des tâches');
+                }
               }}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/25 text-white transition cursor-pointer shrink-0 text-lg font-bold leading-none border-0"
+              disabled={!canCreateTask}
+              className={`group relative flex items-center gap-2 px-4 py-2 rounded-lg ${
+                canCreateTask
+                  ? 'cursor-pointer hover:scale-105 active:scale-95'
+                  : 'cursor-not-allowed opacity-40'
+              } transition-all duration-300 w-full max-w-[200px]`}
+              style={{
+                background: canCreateTask 
+                  ? 'rgba(255, 255, 255, 0.25)'
+                  : 'rgba(100, 100, 100, 0.3)',
+                boxShadow: canCreateTask 
+                  ? '0 4px 20px rgba(0, 0, 0, 0.2), 0 0 10px rgba(255, 255, 255, 0.3)'
+                  : 'none',
+                border: canCreateTask ? '2px solid rgba(255, 255, 255, 0.4)' : 'none',
+              }}
+              title={canCreateTask ? "Ajouter une tâche" : "Permission refusée"}
             >
-              −
+              {/* Background glow on hover */}
+              {canCreateTask && (
+                <div 
+                  className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ 
+                    background: 'rgba(255, 255, 255, 0.1)',
+                  }}
+                />
+              )}
+              
+              {/* Plus icon */}
+              <Plus 
+                className={`relative text-white z-10 transition-transform duration-300 shrink-0 ${
+                  canCreateTask ? 'group-hover:rotate-90' : ''
+                }`}
+                size={18} 
+                strokeWidth={3}
+              />
+              
+              {/* Text */}
+              <span className="relative text-white font-medium text-sm z-10 whitespace-nowrap">
+                Ajouter une tâche
+              </span>
+              
+              {/* Pulse effect on hover */}
+              {canCreateTask && (
+                <div 
+                  className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%)',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }}
+                />
+              )}
             </button>
-          </>
+          </div>
         )}
       </div>
 
@@ -209,7 +280,7 @@ const SortableColumn: React.FC<{
                     className="flex items-center justify-center text-[#6B7280] dark:text-[#8890A8] text-xs italic flex-1"
                     style={{ pointerEvents: 'none', minHeight: 60 }}
                   >
-                    Drop tasks here
+                    Déposez les tâches ici
                   </div>
                 </DroppableColumn>
               ) : (
@@ -224,26 +295,6 @@ const SortableColumn: React.FC<{
               )}
             </div>
           </SortableContext>
-
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (canCreateTask) {
-                onQuickCreate();
-              } else {
-                toast.error('You do not have permission to create tasks');
-              }
-            }}
-            disabled={!canCreateTask}
-            className={`mx-3 mb-3 py-2 rounded-xl border border-dashed text-xs transition flex items-center justify-center gap-1 font-medium shrink-0 bg-transparent ${
-              canCreateTask
-                ? 'border-[#DDE1E9] dark:border-[#2E3450] hover:border-[#E8531A]/60 text-[#6B7280] hover:text-[#E8531A] cursor-pointer'
-                : 'border-[#DDE1E9]/50 dark:border-[#2E3450]/50 text-[#6B7280]/50 cursor-not-allowed opacity-50'
-            }`}
-          >
-            <Plus className="w-3.5 h-3.5" /> Add task
-          </button>
         </div>
       )}
 
@@ -350,7 +401,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
   const handleDragStart = (event: DragStartEvent) => {
     // Check permission before allowing drag
     if (!canMoveTask) {
-      toast.error('You do not have permission to move tasks');
+      toast.error('Vous n\'avez pas la permission de déplacer des tâches');
       return;
     }
     setActiveId(event.active.id);
@@ -374,7 +425,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
       const newIndex = board.columns.findIndex((c) => c.status.id === overColId);
 
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        console.log('🔄 Column reorder:', { from: oldIndex, to: newIndex, activeColId, overColId });
+
         setBoard((prev) => {
           if (!prev) return prev;
           const reordered = arrayMove(prev.columns, oldIndex, newIndex);
@@ -465,13 +516,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
     setActiveId(null);
 
     if (!over || !board) {
-      console.log('❌ No drop target');
+
       return;
     }
 
     // Double-check permission
     if (!canMoveTask) {
-      toast.error('You do not have permission to move tasks');
+      toast.error('Vous n\'avez pas la permission de déplacer des tâches');
       // Reload board to revert optimistic UI update
       hasLoadedRef.current = false;
       loadBoard();
@@ -482,7 +533,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
 
     // Column drag end
     if (activeId.startsWith('col-')) {
-      console.log('📊 Column drag ended - saving positions');
+
       
       // Update position numbers based on current order
       const updated = board.columns.map((c, i) => ({ 
@@ -492,12 +543,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
       setBoard({ columns: updated });
 
       const statusIds = updated.map((c) => c.status.id);
-      console.log('💾 Saving column order:', statusIds);
+
       
       apiService
         .updateBoardColumns(projectId, statusIds)
         .then(() => { 
-          console.log('✅ Columns saved successfully'); 
+
           toast.success('Colonnes réordonnées'); 
         })
         .catch((e: any) => { 
@@ -537,7 +588,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
     apiService
       .moveTask(activeId, { status: activeTask.status, position: taskIndex })
       .then((response) => {
-        console.log('✅ Task moved successfully:', response);
+
         toast.success('Tâche déplacée');
         // Keep the optimistic UI update, don't reload
       })
@@ -610,7 +661,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = React.memo(({ projectId, 
             </div>
             <div className="h-20 bg-[#EEF0F4] dark:bg-[#131620]/60 rounded-b-2xl flex items-center justify-center">
               <span className="text-xs text-[#6B7280] dark:text-[#8890A8]">
-                {activeColumn.tasks.length} task{activeColumn.tasks.length !== 1 ? 's' : ''}
+                {activeColumn.tasks.length} tâche{activeColumn.tasks.length !== 1 ? 's' : ''}
               </span>
             </div>
           </div>

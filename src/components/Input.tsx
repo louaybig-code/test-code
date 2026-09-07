@@ -138,6 +138,11 @@ Textarea.displayName = 'Textarea';
 
 /* ── Shared select style helper ─── */
 export const selectClass =
-  'w-full rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-150 ' +
+  'w-full rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150 ' +
   'focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40 focus:border-[#1A8C8C]/60 cursor-pointer ' +
-  'border border-[var(--sp-border)] bg-[var(--sp-surface-2)] text-[var(--sp-text)]';
+  'border border-[var(--sp-border)] bg-[var(--sp-surface-2)] text-[var(--sp-text)] ' +
+  'shadow-sm hover:shadow-md hover:border-[#1A8C8C]/30 ' +
+  '[&>option]:rounded-lg [&>option]:py-2 [&>option]:px-3 [&>option]:my-1 ' +
+  '[&>option]:bg-white [&>option]:dark:bg-[#1C2033] [&>option]:text-[var(--sp-text)] ' +
+  '[&>option:checked]:bg-[#1A8C8C]/10 [&>option:checked]:text-[#1A8C8C] [&>option:checked]:font-semibold ' +
+  '[&>option:hover]:bg-[#1A8C8C]/5';

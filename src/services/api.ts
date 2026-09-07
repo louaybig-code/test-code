@@ -34,7 +34,7 @@ import {
 } from '../types';
 
 // Use environment variable or fallback to proxy route
-const BASE_URL = import.meta.env.VITE_APP_URL || '/smash_api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/smash_api';
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -187,21 +187,21 @@ const ERROR_MESSAGES_FR: Record<string, string> = {
   'Invalid request body': 'Corps de requête invalide',
   
   // Permission errors
-  'FORBIDDEN': 'Vous n\'avez pas la permission d\'effectuer cette action',
-  'Insufficient permissions': 'Permissions insuffisantes',
-  'Access denied': 'Accès refusé',
-  'Your role is read-only': 'Votre rôle est en lecture seule',
-  'Your role is read-only and cannot modify': 'Votre rôle ne permet pas de modifier cet élément',
+  'FORBIDDEN': 'Vous n\'avez pas le rôle requis pour cette action',
+  'Insufficient permissions': 'Vous n\'avez pas le rôle requis pour cette action',
+  'Access denied': 'Vous n\'avez pas le rôle requis pour cette action',
+  'Your role is read-only': 'Vous n\'avez pas le rôle requis pour cette action',
+  'Your role is read-only and cannot modify': 'Vous n\'avez pas le rôle requis pour cette action',
   'Requires one of roles': 'Vous n\'avez pas le rôle requis pour cette action',
-  'Not authorized': 'Non autorisé',
-  'Permission denied': 'Permission refusée',
+  'Not authorized': 'Vous n\'avez pas le rôle requis pour cette action',
+  'Permission denied': 'Vous n\'avez pas le rôle requis pour cette action',
   'Role not found': 'Rôle introuvable',
   'Member not found': 'Membre introuvable',
   'Project member not found': 'Membre du projet introuvable',
   'Organization member not found': 'Membre de l\'organisation introuvable',
   'You cannot remove yourself': 'Vous ne pouvez pas vous retirer vous-même',
   'Cannot remove the last owner': 'Impossible de retirer le dernier propriétaire',
-  'You do not have permission': 'Vous n\'avez pas la permission',
+  'You do not have permission': 'Vous n\'avez pas le rôle requis pour cette action',
   
   // Resource errors
   'NOT_FOUND': 'Ressource introuvable',
@@ -259,8 +259,15 @@ const ERROR_MESSAGES_FR: Record<string, string> = {
   
   // Business logic errors
   'Cannot delete system role': 'Impossible de supprimer un rôle système',
+  'Cannot delete role with': 'Impossible de supprimer ce rôle car des membres lui sont assignés. Réassignez-les d\'abord.',
   'Cannot modify system role': 'Impossible de modifier un rôle système',
   'Cannot remove last owner': 'Impossible de retirer le dernier propriétaire',
+  'The channel creator cannot leave': 'Le créateur du canal ne peut pas le quitter — supprimez-le si vous souhaitez le fermer.',
+  'This user reaches the project through their': 'Cet utilisateur accède au projet via son rôle dans l\'organisation. Pour modifier son rôle, modifiez-le au niveau de l\'organisation ou retirez-le de celle-ci.',
+  'role in the organization': 'rôle dans l\'organisation',
+  'not through a project membership': 'pas via une adhésion au projet',
+  'Change their organization role': 'Modifiez leur rôle d\'organisation',
+  'remove them from the organization': 'ou retirez-les de l\'organisation',
   'Sprint already started': 'Le sprint a déjà commencé',
   'Sprint already completed': 'Le sprint est déjà terminé',
   'Task already archived': 'La tâche est déjà archivée',
@@ -285,16 +292,8 @@ function getErrorMessage(error: any): string {
   // For FORBIDDEN errors, always show a clean French message
   // (backend messages like "Requires one of roles: OWNER, ADMIN" are technical — not user-friendly)
   if (code === 'FORBIDDEN' || error.response?.status === 403) {
-    // Try to give a more specific message based on the backend message content
-    if (apiMessage) {
-      if (apiMessage.toLowerCase().includes('read-only') || apiMessage.toLowerCase().includes('read only')) {
-        return 'Votre rôle ne permet pas de modifier cet élément';
-      }
-      if (apiMessage.toLowerCase().includes('requires one of roles') || apiMessage.toLowerCase().includes('role')) {
-        return 'Vous n\'avez pas le rôle requis pour cette action';
-      }
-    }
-    return 'Vous n\'avez pas la permission d\'effectuer cette action';
+    // Always use the specific role-based message for FORBIDDEN errors
+    return 'Vous n\'avez pas le rôle requis pour cette action';
   }
 
   // For UNAUTHORIZED errors
@@ -314,7 +313,7 @@ function getErrorMessage(error: any): string {
     // If no translation found but we have a code match, use that
     if (code && ERROR_MESSAGES_FR[code]) return ERROR_MESSAGES_FR[code];
     // Return the raw API message only if it looks user-friendly (no technical jargon)
-    if (apiMessage && !apiMessage.startsWith('Requires') && !apiMessage.includes('role') && !apiMessage.includes('ability') && !apiMessage.includes('read-only')) {
+    if (apiMessage && !apiMessage.startsWith('Requires') && !apiMessage.includes('ability') && !apiMessage.includes('read-only')) {
       return apiMessage;
     }
     // Fallback to code translation
@@ -811,6 +810,30 @@ export const apiService = {
 
   createChannelMessage: (channelId: string, payload: { body: string }) =>
     requestData<ChannelMessage>(api.post(`/api/v1/channels/${channelId}/messages`, payload)),
+
+  updateChannel: (channelId: string, payload: { name: string }) =>
+    requestData<Channel>(api.patch(`/api/v1/channels/${channelId}`, payload)),
+
+  deleteChannel: (channelId: string) =>
+    api.delete(`/api/v1/channels/${channelId}`),
+
+  getChannelMembers: (channelId: string) =>
+    requestData<any[]>(api.get(`/api/v1/channels/${channelId}/members`)),
+
+  addChannelMember: (channelId: string, payload: { userId: string }) =>
+    requestData<any>(api.post(`/api/v1/channels/${channelId}/members`, payload)),
+
+  leaveChannel: (channelId: string) =>
+    api.delete(`/api/v1/channels/${channelId}/members`),
+
+  removeChannelMember: (channelId: string, userId: string) =>
+    api.delete(`/api/v1/channels/${channelId}/members/${userId}`),
+
+  updateMessage: (channelId: string, messageId: string, payload: { body: string }) =>
+    requestData<ChannelMessage>(api.patch(`/api/v1/channels/${channelId}/messages/${messageId}`, payload)),
+
+  deleteMessage: (channelId: string, messageId: string) =>
+    api.delete(`/api/v1/channels/${channelId}/messages/${messageId}`),
 
   // Notifications
   getNotifications: (params?: { page?: number; limit?: number; unread?: boolean }) =>

@@ -6,7 +6,7 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
-    base: process.env.NODE_ENV === 'production' ? '/agile/' : '/',
+    base: process.env.NODE_ENV === 'production' ? '/app/' : '/',
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -16,12 +16,18 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       allowedHosts: 'all',
-      // Proxy /smash_api to the VPS backend during local development
+      // Proxy API calls to the new backend during local development
       proxy: {
-        '/smash_api': {
-          target: 'https://evalys.admin.preprod.studiolab.fr',
+        '/api': {
+          target: 'https://studiopilote.fr',
           changeOrigin: true,
           secure: false,
+        },
+        '/collab': {
+          target: 'https://studiopilote.fr',
+          changeOrigin: true,
+          secure: false,
+          ws: true, // Enable WebSocket proxying
         },
       },
     },

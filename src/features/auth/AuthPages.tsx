@@ -38,12 +38,13 @@ const AuthLogo: React.FC = () => (
 
 export const AuthPages: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const { login, register: registerUser, loginAsDemo } = useAuth();
+  const { login, register: registerUser, loginAsDemo, logout, user } = useAuth();
 
   // ── Invite token from URL (?invite=TOKEN) ──────────────────────────────────
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [inviteInfo, setInviteInfo] = useState<OrganizationInvitation | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [hasLoggedOutForInvite, setHasLoggedOutForInvite] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -56,14 +57,29 @@ export const AuthPages: React.FC = () => {
       .catch(() => setInviteError('This invitation link is invalid or has expired.'));
   }, []);
 
+  // If user is logged in and on register mode with an invite, log them out automatically
+  useEffect(() => {
+    if (inviteToken && mode === 'register' && user && !hasLoggedOutForInvite) {
+      // User is logged in but trying to register a new account for the invitation
+      // We need to log them out first
+      logout().then(() => {
+        setHasLoggedOutForInvite(true);
+        toast('Vous avez été déconnecté pour créer le nouveau compte', {
+          icon: 'ℹ️',
+          style: { background: '#1A8C8C', color: '#FFFFFF' },
+        });
+      });
+    }
+  }, [inviteToken, mode, user, hasLoggedOutForInvite, logout]);
+
   // After login/register, accept the invite then clean the URL
   const acceptPendingInvite = async (token: string) => {
     try {
       await apiService.acceptInvitationAuth(token);
-      toast.success('Invitation accepted — welcome to the organisation!');
+      toast.success('Invitation acceptée — bienvenue dans l\'organisation !');
     } catch {
       // Non-fatal: user is already logged in, just show a soft warning
-      toast.error('Could not accept invitation automatically. Please ask the admin to re-invite you.');
+      toast.error('Impossible d\'accepter l\'invitation automatiquement. Veuillez demander à l\'administrateur de vous réinviter.');
     }
     // Remove ?invite= from URL without a page reload
     const url = new URL(window.location.href);
@@ -107,7 +123,7 @@ export const AuthPages: React.FC = () => {
     try {
       await registerUser(data.email, data.password, data.firstName, data.lastName);
       if (inviteToken) await acceptPendingInvite(inviteToken);
-      toast.success('Account created successfully!');
+      toast.success('Compte créé avec succès !');
     } catch (err: any) {
       toast.error(err.message || 'Error creating account');
     }
@@ -244,10 +260,6 @@ export const AuthPages: React.FC = () => {
             </Button>
           </form>
         )}
-
-        <div className="pt-1 text-center text-[11px] text-[#8890A8]">
-          StudioPilote · Secure Auth (Bearer JWT + OAuth SSO)
-        </div>
       </div>
     </div>
   );

@@ -22,10 +22,10 @@ export const PermissionsProvider: React.FC<{
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🔍 PermissionsProvider mounted/updated:', { projectId, user: user?.email });
+
     
     if (!projectId || !user) {
-      console.log('⚠️ Missing projectId or user:', { projectId, hasUser: !!user });
+
       setUserRole(null);
       setAbilities([]);
       setLoading(false);
@@ -34,15 +34,15 @@ export const PermissionsProvider: React.FC<{
 
     const fetchPermissions = async () => {
       setLoading(true);
-      console.log('📡 Fetching permissions for project:', projectId);
+
       try {
         // Get project members to find current user's role
         const membersResponse = await apiService.getProjectMembers(projectId);
-        console.log('👥 Raw API response:', membersResponse);
+
         
         // Handle both array and wrapped response formats
         const members = Array.isArray(membersResponse) ? membersResponse : (membersResponse as any)?.members || [];
-        console.log('👥 Parsed members array:', members);
+
         
         // Backend doesn't return userId in members, only user.email — match by both
         const currentMember = members.find(
@@ -51,24 +51,24 @@ export const PermissionsProvider: React.FC<{
             (m.user?.email && m.user.email === user.email) ||
             (m.email && m.email === user.email)
         );
-        console.log('👤 Current member:', currentMember);
+
         
         if (!currentMember) {
-          console.log('⚠️ User not found in project members. Checking if empty members list...');
+
           
           // If members array is empty OR user is not in list (they are the owner/creator),
           // assume OWNER — backend doesn't include project owner in members list
           if (members.length === 0) {
-            console.log('📝 Empty members list - assuming current user is OWNER');
+
             setUserRole('OWNER');
             
             // Get project permissions and use OWNER abilities
             try {
               const permissions = await apiService.getProjectPermissions(projectId);
-              console.log('🔒 Project permissions:', permissions);
+
               
               const ownerPermission = (permissions.roles || []).find((r: any) => (r.name || r.id) === 'OWNER');
-              console.log('🎯 OWNER permissions:', ownerPermission);
+
               
               setAbilities(ownerPermission?.abilities || []);
               
@@ -82,7 +82,7 @@ export const PermissionsProvider: React.FC<{
               });
             } catch (permError: any) {
               console.error('❌ Failed to fetch permissions for OWNER:', permError);
-              console.log('⚠️ Using fallback: all abilities granted');
+
               // Set full permissions as fallback
               const fallbackAbilities = [
                 'task:create', 
@@ -106,7 +106,7 @@ export const PermissionsProvider: React.FC<{
               });
             }
           } else {
-            console.log('⚠️ User not found in non-empty members list — backend omits owner from members, assuming OWNER');
+
             setUserRole('OWNER');
 
             try {
@@ -128,7 +128,7 @@ export const PermissionsProvider: React.FC<{
                 'comment:create', 'sprint:manage', 'workflow:manage', 'dashboard:manage',
               ];
               setAbilities(fallbackAbilities as any[]);
-              console.log('🔐 Permissions (owner fallback — API failed):', { role: 'OWNER', abilities: fallbackAbilities });
+
             }
           }
           setLoading(false);
@@ -156,12 +156,12 @@ export const PermissionsProvider: React.FC<{
         // Get project permissions to find abilities for this system role
         try {
           const permissions = await apiService.getProjectPermissions(projectId);
-          console.log('🔒 Project permissions:', permissions);
+
           
           const rolePermission = (permissions.roles || []).find(
             (r: any) => (r.name || r.id)?.toUpperCase() === (currentMember.role || '').toUpperCase()
           );
-          console.log('🎯 Role permission:', rolePermission);
+
           
           setAbilities(rolePermission?.abilities || []);
           
@@ -175,7 +175,7 @@ export const PermissionsProvider: React.FC<{
           });
         } catch (permError: any) {
           console.error('❌ Failed to fetch project permissions:', permError);
-          console.log('⚠️ Using fallback: all abilities granted for', currentMember.role);
+
           
           // Fallback permissions based on role
           const fallbackAbilities = currentMember.role === 'OWNER' || currentMember.role === 'ADMIN' 

@@ -172,7 +172,7 @@ export const ListView: React.FC<ListViewProps> = ({ projectId, onSelectTask }) =
         <select
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
-          className="bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 rounded-xl py-1.5 px-3 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+          className="bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 rounded-xl py-2 px-3.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-sm hover:shadow-md hover:border-violet-500/30 transition-all duration-150 cursor-pointer"
         >
           <option value="">Toutes les priorités</option>
           <option value="LOW">Basse</option>

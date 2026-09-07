@@ -105,7 +105,7 @@ export const OrgSettingsModal: React.FC<OrgSettingsModalProps> = ({
       const list = await apiService.getOrgMembers(activeOrg.id);
       setMembers(list ?? []);
     } catch {
-      toast.error('Failed to load members');
+      toast.error('Échec du chargement des membres');
     } finally {
       setIsLoadingMembers(false);
     }
@@ -259,7 +259,7 @@ export const OrgSettingsModal: React.FC<OrgSettingsModalProps> = ({
                         onChange={(e) => handleChangeRole(m, e.target.value as any)}
                         disabled={!!isSelf || isConfirming}
                         title={isSelf ? 'Vous ne pouvez pas modifier votre propre rôle' : undefined}
-                        className={`text-[11px] font-semibold rounded-lg px-2 py-1 border border-[#2E3450] bg-[#1C2033] text-[#E8EAF0] focus:outline-none focus:border-[#E8531A] ${
+                        className={`text-xs font-semibold rounded-xl px-3 py-2 border border-[#2E3450] bg-[#1C2033] text-[#E8EAF0] focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40 shadow-sm hover:shadow-md hover:border-[#1A8C8C]/30 transition-all duration-150 ${
                           isSelf || isConfirming ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                         }`}
                       >

@@ -4,7 +4,7 @@ import {
   X, Star, Archive, RotateCcw, Plus, Trash2, Paperclip,
   MessageSquare, Activity, FileText, Send, Download,
   CheckCircle2, Circle, Flag, Calendar, Loader2, User,
-  Layers, Rocket,
+  Layers, Rocket, Check, Pencil,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import {
@@ -40,10 +40,11 @@ const tabBtn = (active: boolean) =>
   }`;
 
 const miniInput =
-  `w-full rounded-xl px-3 py-2 text-xs font-medium cursor-pointer
-   focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40
+  `w-full rounded-xl px-3.5 py-2 text-xs font-medium cursor-pointer
+   focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40 focus:border-[#1A8C8C]/60
    border border-[var(--sp-border)] bg-[var(--sp-surface-2)]
-   text-[var(--sp-text)]`;
+   text-[var(--sp-text)] shadow-sm hover:shadow-md hover:border-[#1A8C8C]/30
+   transition-all duration-150`;
 
 const metaLabel = `flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider mb-1`;
 
@@ -75,6 +76,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   // Store uploaded filenames locally (workaround for backend returning null fileName)
   const [uploadedFileNames, setUploadedFileNames] = useState<Record<string, string>>({});
 
+  // Title editing state
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+
   // Permission checks
   const canUpdateTask = hasAbility('task:update');
   const canDeleteTask = hasAbility('task:delete');
@@ -93,7 +98,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         apiService.getEpics(data.projectId).then(setEpics).catch(() => {});
         apiService.getSprints(data.projectId).then(setSprints).catch(() => {});
       }
-    } catch { toast.error('Error loading task'); }
+    } catch { toast.error('Erreur lors du chargement de la tâche'); }
     finally   { setIsLoading(false); }
   };
 
@@ -129,7 +134,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     if (activeTab === 'comments')  apiService.getTaskComments(taskId).then(setComments).catch(() => {});
     if (activeTab === 'activity') {
       apiService.getTaskActivity(taskId).then((data) => {
-        console.log('📊 Activity data received:', data);
+
         setActivities(data);
       }).catch(() => {});
     }
@@ -152,14 +157,16 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     if (!task) return;
     try {
       task.archivedAt ? await apiService.restoreTask(task.id) : await apiService.archiveTask(task.id);
-      toast.success(task.archivedAt ? 'Task restored' : 'Task archived');
+      toast.success(task.archivedAt ? 'Tâche restaurée' : 'Tâche archivée');
       loadTask(task.id); onTaskUpdated?.();
-    } catch { toast.error('Error'); }
+    } catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors de l\'archivage de la tâche'); 
+    }
   };
 
   const assigneeChange = (id: string) => {
     if (!task || !canUpdateTask) {
-      if (!canUpdateTask) toast.error('You do not have permission to update tasks');
+      if (!canUpdateTask) toast.error('Vous n\'avez pas la permission de modifier les tâches');
       return;
     }
     const user = members.find((m) => m.id === id) ?? null;
@@ -167,11 +174,43 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     setHasChanges(true); // Mark as changed
   };
 
+  const startEditingTitle = () => {
+    if (!canUpdateTask) {
+      toast.error('Vous n\'avez pas la permission de modifier les tâches');
+      return;
+    }
+    setEditedTitle(task?.title || '');
+    setIsEditingTitle(true);
+  };
+
+  const cancelEditingTitle = () => {
+    setIsEditingTitle(false);
+    setEditedTitle('');
+  };
+
+  const saveTitle = async () => {
+    if (!task || !editedTitle.trim() || editedTitle === task.title) {
+      setIsEditingTitle(false);
+      return;
+    }
+
+    try {
+      await apiService.updateTask(task.id, { title: editedTitle.trim() });
+      setTask({ ...task, title: editedTitle.trim() });
+      setOriginalTask({ ...task, title: editedTitle.trim() });
+      setIsEditingTitle(false);
+      toast.success('Titre mis à jour');
+      onTaskUpdated?.();
+    } catch (error: any) {
+      toast.error(error?.message || 'Erreur lors de la mise à jour du titre');
+    }
+  };
+
   const handleSaveChanges = async () => {
     if (!task || !hasChanges) return;
     
     if (!canUpdateTask) {
-      toast.error('You do not have permission to update tasks');
+      toast.error('Vous n\'avez pas la permission de modifier les tâches');
       return;
     }
     
@@ -189,6 +228,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       if (task.sprintId !== originalTask?.sprintId) {
         updates.sprintId = task.sprintId;
       }
+      if (task.priority !== originalTask?.priority) {
+        updates.priority = task.priority;
+      }
       if (task.progress !== originalTask?.progress) {
         updates.progress = task.progress;
       }
@@ -201,12 +243,12 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         await apiService.setTaskProgress(task.id, updates.progress);
       }
       
-      toast.success('Task saved successfully');
+      toast.success('Tâche enregistrée avec succès');
       setOriginalTask(task); // Update original
       setHasChanges(false); // Reset changes flag
       onTaskUpdated?.();
     } catch (error: any) {
-      toast.error(error?.message || 'Error saving task');
+      toast.error(error?.message || 'Erreur lors de l\'enregistrement de la tâche');
     } finally {
       setIsSaving(false);
     }
@@ -219,7 +261,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       const sub = await apiService.createSubtask(task.id, { title: newSub.trim() });
       setSubtasks([...subtasks, sub]); setNewSub('');
       onTaskUpdated?.();
-    } catch { toast.error('Error adding subtask'); }
+    } catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors de l\'ajout de la sous-tâche'); 
+    }
   };
 
   const toggleSubtask = async (sub: TaskSubtask) => {
@@ -232,7 +276,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const delSubtask = async (id: string) => {
     setSubtasks(subtasks.filter((s) => s.id !== id));
     try { await apiService.deleteSubtask(id); }
-    catch { toast.error('Error'); }
+    catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors de la suppression de la sous-tâche'); 
+    }
   };
 
   const addComment = async (e: React.FormEvent) => {
@@ -240,7 +286,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     if (!newComment.trim() || !task) return;
     
     if (!canCreateComment) {
-      toast.error('You do not have permission to create comments');
+      toast.error('Vous n\'avez pas la permission de créer des commentaires');
       return;
     }
     
@@ -248,18 +294,22 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     try {
       const c = await apiService.createComment(task.id, { body: newComment.trim() });
       setComments([c, ...comments]); setNewComment('');
-    } catch { toast.error('Error posting comment'); }
+    } catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors de l\'envoi du commentaire'); 
+    }
     finally { setIsSendingComment(false); }
   };
 
   const delComment = async (id: string) => {
     if (!canDeleteTask) {
-      toast.error('You do not have permission to delete comments');
+      toast.error('Vous n\'avez pas la permission de supprimer des commentaires');
       return;
     }
     setComments(comments.filter((c) => c.id !== id));
     try { await apiService.deleteComment(id); }
-    catch { toast.error('Error'); }
+    catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors de la suppression du commentaire'); 
+    }
   };
 
   const fileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -269,7 +319,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     const originalName = file.name;
     try {
       const uploaded = await apiService.uploadAttachment(task.id, file);
-      console.log('📎 Upload response:', uploaded);
+
       
       // Store the original filename in our local map (keyed by attachment ID)
       if (uploaded?.id) {
@@ -283,14 +333,18 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       // Reload task to sync with server
       await loadTask(task.id);
     }
-    catch { toast.error('Upload error'); }
+    catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors du téléchargement du fichier'); 
+    }
     finally { setIsUploading(false); }
   };
 
   const delAttachment = async (id: string) => {
     setAttachments(attachments.filter((a) => a.id !== id));
     try { await apiService.deleteAttachment(id); }
-    catch { toast.error('Error'); }
+    catch (error: any) { 
+      toast.error(error?.message || 'Erreur lors de la suppression de la pièce jointe'); 
+    }
   };
 
   return (
@@ -313,7 +367,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
           {isLoading || !task ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
               <div className="w-8 h-8 rounded-full border-2 border-[#E8531A] border-t-transparent animate-spin" />
-              <p className="text-xs" style={MUTED}>Loading task...</p>
+              <p className="text-xs" style={MUTED}>Chargement de la tâche...</p>
             </div>
           ) : (
             <>
@@ -339,7 +393,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                     onClick={archive}
                     className="p-1.5 rounded-lg border transition cursor-pointer"
                     style={{ borderColor: 'var(--sp-border)', color: 'var(--sp-text-muted)' }}
-                    title={task.archivedAt ? 'Restore' : 'Archive'}
+                    title={task.archivedAt ? 'Restaurer' : 'Archiver'}
                   >
                     {task.archivedAt
                       ? <RotateCcw className="w-4 h-4" style={{ color: 'var(--sp-teal)' }} />
@@ -357,9 +411,62 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
               {/* ── Task meta header ── */}
               <div className="px-6 py-5 space-y-4 shrink-0" style={{ borderBottom: '1px solid var(--sp-border)' }}>
-                <h2 className="text-xl font-bold leading-snug" style={{ ...TEXT, fontFamily: "'Sora', sans-serif" }}>
-                  {task.title}
-                </h2>
+                {/* Task Title - Editable */}
+                <div className="group relative">
+                  {!isEditingTitle ? (
+                    <div className="flex items-start gap-3">
+                      <h2 className="text-xl font-bold leading-snug flex-1" style={{ ...TEXT, fontFamily: "'Sora', sans-serif" }}>
+                        {task.title}
+                      </h2>
+                      {canUpdateTask && (
+                        <button
+                          onClick={startEditingTitle}
+                          className="p-1.5 rounded-lg transition cursor-pointer opacity-0 group-hover:opacity-100"
+                          style={{ color: 'var(--sp-text-muted)', backgroundColor: 'var(--sp-surface-2)' }}
+                          title="Modifier le titre"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveTitle();
+                          if (e.key === 'Escape') cancelEditingTitle();
+                        }}
+                        className="flex-1 text-xl font-bold leading-snug px-3 py-2 rounded-xl border-2 focus:outline-none"
+                        style={{
+                          ...TEXT,
+                          fontFamily: "'Sora', sans-serif",
+                          backgroundColor: 'var(--sp-surface-2)',
+                          borderColor: 'var(--sp-teal)',
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        onClick={saveTitle}
+                        className="p-2 rounded-lg transition cursor-pointer"
+                        style={{ backgroundColor: 'var(--sp-teal)', color: 'white' }}
+                        title="Enregistrer"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={cancelEditingTitle}
+                        className="p-2 rounded-lg transition cursor-pointer"
+                        style={{ backgroundColor: 'var(--sp-surface-2)', color: 'var(--sp-text-muted)' }}
+                        title="Annuler"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 {/* Status / Priority / Due Date badges */}
                 <div className="flex flex-wrap gap-2 items-center">
@@ -374,8 +481,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   )}
                 </div>
 
-                {/* Epic + Sprint selectors */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Epic + Sprint + Priority selectors */}
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <p className={metaLabel} style={MUTED}>
                       <Layers className="w-3 h-3" style={{ color: 'var(--sp-teal)' }} /> Epic
@@ -387,9 +494,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                         setTask({ ...task, epicId });
                         setHasChanges(true);
                       }}
-                      className={miniInput}
+                      disabled={!canUpdateTask}
+                      className={miniInput + (!canUpdateTask ? ' opacity-50 cursor-not-allowed' : '')}
                     >
-                      <option value="">(No epic)</option>
+                      <option value="">(Pas d'epic)</option>
                       {epics.map((ep) => <option key={ep.id} value={ep.id}>{ep.name}</option>)}
                     </select>
                   </div>
@@ -404,10 +512,30 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                         setTask({ ...task, sprintId });
                         setHasChanges(true);
                       }}
-                      className={miniInput}
+                      disabled={!canUpdateTask}
+                      className={miniInput + (!canUpdateTask ? ' opacity-50 cursor-not-allowed' : '')}
                     >
                       <option value="">(Backlog)</option>
                       {sprints.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.status})</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <p className={metaLabel} style={MUTED}>
+                      <Flag className="w-3 h-3" style={{ color: 'var(--sp-violet)' }} /> Priorité
+                    </p>
+                    <select
+                      value={task.priority || 'MEDIUM'}
+                      onChange={(e) => {
+                        setTask({ ...task, priority: e.target.value as any });
+                        setHasChanges(true);
+                      }}
+                      disabled={!canUpdateTask}
+                      className={miniInput + (!canUpdateTask ? ' opacity-50 cursor-not-allowed' : '')}
+                    >
+                      <option value="LOW">🟢 Basse</option>
+                      <option value="MEDIUM">🟡 Moyenne</option>
+                      <option value="HIGH">🟠 Haute</option>
+                      <option value="URGENT">🔴 Urgente</option>
                     </select>
                   </div>
                 </div>
@@ -415,7 +543,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 {/* Assignee */}
                 <div className="flex items-center gap-3 pt-1" style={{ borderTop: '1px solid var(--sp-border)' }}>
                   <User className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--sp-teal)' }} />
-                  <span className="text-xs font-semibold" style={MUTED}>Assigned to</span>
+                  <span className="text-xs font-semibold" style={MUTED}>Assigné à</span>
                   {task.assignee && (
                     <Avatar
                       src={task.assignee.avatarUrl}
@@ -431,7 +559,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                     disabled={!canUpdateTask}
                     className={miniInput + ' max-w-[200px]' + (!canUpdateTask ? ' opacity-50 cursor-not-allowed' : '')}
                   >
-                    <option value="">(Unassigned)</option>
+                    <option value="">(Non assigné)</option>
                     {members.map((u) => (
                       <option key={u.id} value={u.id}>
                         {[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email}
@@ -528,13 +656,13 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   <FileText className="w-4 h-4" /> Description
                 </button>
                 <button onClick={() => setActiveTab('comments')} className={tabBtn(activeTab === 'comments')} style={activeTab !== 'comments' ? MUTED : {}}>
-                  <MessageSquare className="w-4 h-4" /> Comments ({comments.length})
+                  <MessageSquare className="w-4 h-4" /> Commentaires ({comments.length})
                 </button>
                 <button onClick={() => setActiveTab('activity')} className={tabBtn(activeTab === 'activity')} style={activeTab !== 'activity' ? MUTED : {}}>
-                  <Activity className="w-4 h-4" /> Activity
+                  <Activity className="w-4 h-4" /> Activité
                 </button>
                 <button onClick={() => setActiveTab('attachments')} className={tabBtn(activeTab === 'attachments')} style={activeTab !== 'attachments' ? MUTED : {}}>
-                  <Paperclip className="w-4 h-4" /> Files ({attachments.length})
+                  <Paperclip className="w-4 h-4" /> Fichiers ({attachments.length})
                 </button>
               </div>
 
@@ -550,7 +678,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                         className="text-sm leading-relaxed whitespace-pre-line p-4 rounded-xl"
                         style={{ ...SURFACE2, color: 'var(--sp-text-secondary)' }}
                       >
-                        {task.description || 'No description added yet.'}
+                        {task.description || 'Aucune description ajoutée.'}
                       </p>
                     </div>
 
@@ -587,13 +715,13 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                       <form onSubmit={addSubtask} className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Add a subtask..."
+                          placeholder="Ajouter une sous-tâche..."
                           value={newSub}
                           onChange={(e) => setNewSub(e.target.value)}
                           className="flex-1 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40"
                           style={SURFACE2}
                         />
-                        <Button variant="secondary" size="sm" type="submit" icon={<Plus className="w-3.5 h-3.5" />}>Add</Button>
+                        <Button variant="secondary" size="sm" type="submit" icon={<Plus className="w-3.5 h-3.5" />}>Ajouter</Button>
                       </form>
                     </div>
                   </div>
@@ -606,7 +734,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                       <form onSubmit={addComment} className="space-y-3">
                         <textarea
                           rows={3}
-                          placeholder="Write a comment..."
+                          placeholder="Écrire un commentaire..."
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           className="w-full rounded-xl px-3.5 py-2.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40"
@@ -620,7 +748,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                       </form>
                     ) : (
                       <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                        <p className="text-xs text-amber-400">You do not have permission to create comments</p>
+                        <p className="text-xs text-amber-400">Vous n'avez pas la permission de créer des commentaires</p>
                       </div>
                     )}
                     <div className="space-y-3">
@@ -882,8 +1010,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                                     a.click();
                                     a.remove();
                                     window.URL.revokeObjectURL(objectUrl);
-                                  } catch {
-                                    toast.error('Download failed');
+                                  } catch (error: any) {
+                                    toast.error(error?.message || 'Erreur lors du téléchargement du fichier');
                                   }
                                 }}
                                 className="p-1.5 rounded cursor-pointer"
@@ -927,7 +1055,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                       color: 'var(--sp-text-muted)',
                     }}
                   >
-                    Cancel
+                    Annuler
                   </button>
                   <button
                     onClick={handleSaveChanges}
@@ -937,9 +1065,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                       backgroundColor: 'var(--sp-teal)',
                       color: 'white',
                     }}
-                    title={!canUpdateTask ? 'You do not have permission to update tasks' : ''}
+                    title={!canUpdateTask ? 'Vous n\'avez pas la permission de modifier les tâches' : ''}
                   >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? 'Enregistrement...' : 'Enregistrer'}
                   </button>
                 </div>
               )}

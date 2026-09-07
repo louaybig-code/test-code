@@ -4,6 +4,9 @@ import { PermissionsProvider } from './context/PermissionsContext';
 import { AuthPages } from './features/auth/AuthPages';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
+import { Modal } from './components/Modal';
+import { Input } from './components/Input';
+import { Button } from './components/Button';
 import { CommandBar } from './components/CommandBar';
 // import { CookieBanner } from './components/CookieBanner'; // Disabled - blocked by ad blockers
 import { OrgSettingsModal } from './features/organization/OrgSettingsModal';
@@ -21,13 +24,15 @@ import { ListView } from './features/list/ListView';
 import { CalendarView } from './features/calendar/CalendarView';
 import { WorkflowEditor } from './features/workflow/WorkflowEditor';
 import { DashboardView } from './features/dashboard/DashboardView';
+import { ProjectStatsView } from './features/dashboard/ProjectStatsView';
 import { ChannelsView } from './features/channels/ChannelsView';
 import { AllOrganizationsView } from './features/dashboard/AllOrganizationsView';
 
 import { apiService } from './services/api';
+import { reconnectSocketWithToken, disconnectSocket } from './hooks/useSocket';
 import { Organization, Workspace, Project, Task } from './types';
 import { Toaster } from 'react-hot-toast';
-import { Loader2, Pencil, Trash2, Check, X, AlertTriangle, UserPlus, Users, Settings, ArrowRight } from 'lucide-react';
+import { Loader2, Pencil, Trash2, Check, X, AlertTriangle, UserPlus, Users, Settings, ArrowRight, Tag, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function App() {
@@ -226,6 +231,10 @@ export default function App() {
   const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
+  const [newStatusName, setNewStatusName] = useState('');
+  const [newStatusCategory, setNewStatusCategory] = useState<'TODO' | 'IN_PROGRESS' | 'DONE'>('TODO');
+  const [newStatusColor, setNewStatusColor] = useState('#1A8C8C');
   const [initialTaskStatus, setInitialTaskStatus] = useState<string>('todo');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
@@ -382,8 +391,10 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
+      reconnectSocketWithToken(); // Connect with token AFTER auth is confirmed
       loadEverything();
     } else {
+      disconnectSocket();
       setOrganizations([]);
       setActiveOrg(null);
       setWorkspaces([]);
@@ -399,11 +410,11 @@ export default function App() {
       <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ backgroundColor: "var(--sp-bg)", color: "var(--sp-text)" }}>
         <Loader2 className="w-10 h-10 animate-spin text-[#E8531A] mb-4" />
         <div className="flex items-baseline gap-0">
-          <span className="text-xl font-bold text-[#E8EAF0]">Loading&nbsp;</span>
+          <span className="text-xl font-bold text-[#E8EAF0]">Chargement&nbsp;</span>
           <span className="text-xl font-bold text-[#E8531A]">Studio</span>
           <span className="text-xl font-bold text-[#1A8C8C]">Pilot</span>
         </div>
-        <span className="text-[11px] text-[#8890A8] mt-1">Your agile workspace</span>
+              <span className="text-[11px]">Votre espace de travail</span>
       </div>
     );
   }
@@ -465,6 +476,7 @@ export default function App() {
             setInitialTaskStatus('todo');
             setIsTaskModalOpen(true);
           }}
+          onOpenWorkflowModal={() => setIsWorkflowModalOpen(true)}
           onOpenCommandBar={() => setIsCommandBarOpen(true)}
           onToggleMobile={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           onOpenProfile={() => setIsProfileModalOpen(true)}
@@ -498,6 +510,20 @@ export default function App() {
               onCreateOrganization={() => {
                 setOrgModalDefaultTab('create');
                 setIsOrgModalOpen(true);
+              }}
+              ownedOrgIds={ownedOrgIds}
+              onDeleteOrganization={async (orgId) => {
+                await apiService.deleteOrganization(orgId);
+                // Remove from state
+                setOrganizations(orgs => orgs.filter(o => o.id !== orgId));
+                const updatedOwned = new Set(ownedOrgIds);
+                updatedOwned.delete(orgId);
+                setOwnedOrgIds(updatedOwned);
+                ownedOrgIdsRef.current = updatedOwned;
+                // If deleted org was active, clear it
+                if (activeOrg?.id === orgId) {
+                  setActiveOrgP(null);
+                }
               }}
             />
           )}
@@ -751,7 +777,7 @@ export default function App() {
                         onChange={(e) => setInviteEmail(e.target.value)} required autoFocus
                         className="w-full rounded-xl bg-[#EEF0F4] dark:bg-[#252A3D] border border-[#DDE1E9] dark:border-[#2E3450] text-[#1C2033] dark:text-[#E8EAF0] placeholder-[#6B7280] text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/50" />
                       <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as any)}
-                        className="w-full rounded-xl bg-[#EEF0F4] dark:bg-[#252A3D] border border-[#DDE1E9] dark:border-[#2E3450] text-[#1C2033] dark:text-[#E8EAF0] text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/50">
+                        className="w-full rounded-xl bg-[#EEF0F4] dark:bg-[#252A3D] border border-[#DDE1E9] dark:border-[#2E3450] text-[#1C2033] dark:text-[#E8EAF0] text-sm font-medium py-2.5 px-3.5 focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/50 shadow-sm hover:shadow-md hover:border-[#1A8C8C]/30 transition-all duration-150 cursor-pointer">
                         {projectRoles.map(role => (
                           <option key={role.name} value={role.name}>
                             {role.name} {!role.isSystem && '(Custom)'}
@@ -834,6 +860,12 @@ export default function App() {
               {activeView === 'dashboard' && (
                 <DashboardView projectId={activeProject.id} />
               )}
+              {activeView === 'stats' && (
+                <ProjectStatsView 
+                  projectId={activeProject.id} 
+                  projectName={activeProject.name}
+                />
+              )}
               {activeView === 'channels' && activeWorkspace && (
                 <ChannelsView workspaceId={activeWorkspace.id} />
               )}
@@ -855,6 +887,11 @@ export default function App() {
         defaultTab={orgModalDefaultTab}
         onOrgCreated={(newOrg) => {
           setOrganizations([...organizations, newOrg]);
+          // Add to owned orgs since the current user just created it
+          const updatedOwned = new Set(ownedOrgIds);
+          updatedOwned.add(newOrg.id);
+          setOwnedOrgIds(updatedOwned);
+          ownedOrgIdsRef.current = updatedOwned;
           setActiveOrgP(newOrg);
           setActiveScreenP('org');
         }}
@@ -904,6 +941,115 @@ export default function App() {
             triggerViewRefresh();
           }}
         />
+      )}
+
+      {/* Workflow (Add Status) Modal */}
+      {activeProject && (
+        <Modal
+          isOpen={isWorkflowModalOpen}
+          onClose={() => {
+            setIsWorkflowModalOpen(false);
+            setNewStatusName('');
+            setNewStatusCategory('TODO');
+            setNewStatusColor('#1A8C8C');
+          }}
+          title="Ajouter un statut au workflow"
+        >
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newStatusName.trim()) return;
+              try {
+                await apiService.createStatus(activeProject.id, {
+                  name: newStatusName.trim(),
+                  category: newStatusCategory,
+                  color: newStatusColor,
+                });
+                toast.success('Statut créé');
+                setNewStatusName('');
+                setNewStatusCategory('TODO');
+                setNewStatusColor('#1A8C8C');
+                setIsWorkflowModalOpen(false);
+                // Refresh kanban board
+                triggerViewRefresh();
+              } catch (err: any) {
+                toast.error(err?.message || 'Erreur lors de la création');
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <Input
+                  label="Nom du statut"
+                  placeholder="Ex: En Cours, Terminé"
+                  value={newStatusName}
+                  onChange={(e) => setNewStatusName(e.target.value)}
+                  icon={<Tag className="w-4 h-4 text-[#1A8C8C]" />}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-[#2C3147] dark:text-[#E8EAF0] mb-2">
+                  Catégorie
+                </label>
+                <select
+                  value={newStatusCategory}
+                  onChange={(e) => setNewStatusCategory(e.target.value as any)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDE1E9] dark:border-[#2E3450] bg-white dark:bg-[#1C2033] text-[#2C3147] dark:text-[#E8EAF0] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40 shadow-sm hover:shadow-md hover:border-[#1A8C8C]/30 transition-all duration-150 cursor-pointer"
+                >
+                  <option value="TODO">À faire</option>
+                  <option value="IN_PROGRESS">En cours</option>
+                  <option value="DONE">Terminé</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-[#2C3147] dark:text-[#E8EAF0] mb-2">
+                  Couleur
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={newStatusColor}
+                    onChange={(e) => setNewStatusColor(e.target.value)}
+                    className="w-12 h-10 rounded-xl border border-[#DDE1E9] dark:border-[#2E3450] cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={newStatusColor}
+                    onChange={(e) => setNewStatusColor(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border border-[#DDE1E9] dark:border-[#2E3450] bg-white dark:bg-[#1C2033] text-[#2C3147] dark:text-[#E8EAF0] text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40"
+                    placeholder="#1A8C8C"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsWorkflowModalOpen(false);
+                  setNewStatusName('');
+                  setNewStatusCategory('TODO');
+                  setNewStatusColor('#1A8C8C');
+                }}
+                type="button"
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                icon={<Plus className="w-4 h-4" />}
+              >
+                Ajouter
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       <PermissionsProvider projectId={activeProject?.id || null}>

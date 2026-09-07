@@ -129,7 +129,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       try {
         // Load available roles and abilities from /api/v1/roles
         const rolesCatalog = await apiService.getRoles();
-        console.log('📚 Roles catalog from API:', rolesCatalog);
+
         setApiRoles(rolesCatalog.roles);
         setAvailableAbilities(rolesCatalog.projectAbilities);
         
@@ -137,10 +137,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         let perms;
         try {
           perms = await apiService.getProjectPermissions(projectId);
-          console.log('🔐 Current project permissions:', perms);
+
         } catch (permError: any) {
           console.error('❌ Failed to load project permissions:', permError);
-          console.log('⚠️ Using default system roles from catalog');
+
           
           // Use roles catalog as fallback
           perms = {
@@ -176,12 +176,12 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
           };
         });
         
-        console.log('✅ All roles (system + custom):', allRoles);
+
         setRoles(allRoles.length > 0 ? allRoles : DEFAULT_ROLES);
       } catch (error: any) {
         console.error('Failed to load permissions:', error);
         if (!error?.message?.includes('Too Many Requests') && !error?.message?.includes('THROTTLER')) {
-          toast.error('Could not load permissions');
+          toast.error('Impossible de charger les permissions');
         }
         // Keep default roles as fallback
         setRoles(DEFAULT_ROLES);
@@ -210,7 +210,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         email: inviteEmail.trim(),
         role: inviteRoleId as any
       });
-      toast.success('Member invited successfully');
+      toast.success('Membre invité avec succès');
       setInviteEmail(''); 
       setShowInviteForm(false);
       // Reload members list
@@ -239,7 +239,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       // Reload members to get updated data
       const updatedMembers = await apiService.getProjectMembers(projectId);
       if (updatedMembers) setMembers(updatedMembers as any[]);
-      toast.success('Role updated');
+      toast.success('Rôle mis à jour');
     } catch (error: any) {
       toast.error(error?.message || 'Failed to update role');
     }
@@ -262,7 +262,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         abilities: Array.from(newRolePerms),
       });
       
-      console.log('✅ Custom role created:', createdRole);
+
       
       // Add to local roles state
       setRoles(prev => [...prev, {
@@ -285,7 +285,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
   const handleDeleteRole = async (roleId: string, roleName: string, isSystem: boolean) => {
     if (isSystem) {
-      toast.error('Cannot delete system roles');
+      toast.error('Impossible de supprimer les rôles système');
       return;
     }
     
@@ -320,7 +320,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     try {
       await apiService.updateProject(projectId, { name: editName, description: editDesc });
       onProjectUpdated?.(editName, editDesc);
-      toast.success('Project updated');
+      toast.success('Projet mis à jour');
     } catch (error: any) {
       toast.error(error?.message || 'Failed to update project');
     }
@@ -377,7 +377,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     className="flex-1 min-w-[200px] rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 text-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                   />
                   <select value={inviteRoleId} onChange={e => setInviteRoleId(e.target.value)}
-                    className="rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-xs py-2 px-3 focus:outline-none">
+                    className="rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 text-sm font-medium py-2 px-3.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-sm hover:shadow-md hover:border-violet-500/30 transition-all duration-150 cursor-pointer">
                     {roles.map(r => (
                       <option key={r.id} value={r.name}>
                         {r.name} {!r.isSystem && '(Custom)'}
@@ -567,7 +567,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                                   
                                   // If system role not found, try creating it first as a custom role
                                   if (role.isSystem && error?.message?.includes('not found')) {
-                                    console.log('⚠️ System role not found in project, trying to initialize it...');
+
                                     try {
                                       await apiService.createProjectRole(projectId, {
                                         name: role.name,

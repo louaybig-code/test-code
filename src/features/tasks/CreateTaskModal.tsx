@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { CheckSquare, Calendar, Flag, Tag, Layers, User } from 'lucide-react';
 
 const schema = z.object({
-  title:      z.string().min(2, 'Title must be at least 2 characters'),
+  title:      z.string().min(2, 'Le titre doit contenir au moins 2 caractères'),
   description:z.string().optional(),
   status:     z.string().optional(),
   priority:   z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
@@ -115,7 +115,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         progress:   progress || 0,
       };
       const task = await apiService.createTask(projectId, clean);
-      toast.success('Task created!');
+      toast.success('Tâche créée !');
       onTaskCreated(task);
       reset();
       setProgress(0);
@@ -126,13 +126,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create New Task" maxWidth="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Créer une nouvelle tâche" maxWidth="lg">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
         {/* Title */}
         <Input
-          label="Task Title"
-          placeholder="e.g. Implement Kanban drag-and-drop"
+          label="Titre de la tâche"
+          placeholder="Ex : Implémenter le drag-and-drop Kanban"
           icon={<CheckSquare className="w-4 h-4" />}
           {...register('title')}
           error={errors.title?.message as string}
@@ -148,7 +148,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </label>
           <textarea
             rows={3}
-            placeholder="Details, acceptance criteria, context..."
+            placeholder="Détails, critères d'acceptation, contexte..."
             {...register('description')}
             className="w-full rounded-xl px-3.5 py-2.5 text-sm resize-none
               focus:outline-none focus:ring-2 focus:ring-[#1A8C8C]/40 focus:border-[#1A8C8C]/60"
@@ -164,16 +164,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         <div className={`grid grid-cols-1 ${initialStatus ? '' : 'sm:grid-cols-2'} gap-4`}>
           {!initialStatus && (
             <div>
-              <FieldLabel icon={<Tag className="w-3.5 h-3.5" />}>Status</FieldLabel>
+              <FieldLabel icon={<Tag className="w-3.5 h-3.5" />}>Statut</FieldLabel>
               <select {...register('status')} className={selectClass}>
                 {statuses.length > 0
                   ? statuses.map((s) => (
                       <option key={s.id} value={s.key || s.name.toLowerCase()}>{s.name}</option>
                     ))
                   : <>
-                      <option value="todo">To Do</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="done">Done</option>
+                      <option value="todo">À faire</option>
+                      <option value="in_progress">En cours</option>
+                      <option value="done">Terminé</option>
                     </>
                 }
               </select>
@@ -181,12 +181,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           )}
 
           <div>
-            <FieldLabel icon={<Flag className="w-3.5 h-3.5" />}>Priority</FieldLabel>
+            <FieldLabel icon={<Flag className="w-3.5 h-3.5" />}>Priorité</FieldLabel>
             <select {...register('priority')} className={selectClass}>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
+              <option value="LOW">Basse</option>
+              <option value="MEDIUM">Moyenne</option>
+              <option value="HIGH">Haute</option>
+              <option value="URGENT">Urgente</option>
             </select>
           </div>
         </div>
@@ -194,23 +194,23 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         {/* Folder + Epic + Sprint */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <FieldLabel icon={<Layers className="w-3.5 h-3.5" />}>Folder</FieldLabel>
+            <FieldLabel icon={<Layers className="w-3.5 h-3.5" />}>Dossier</FieldLabel>
             <select {...register('folderId')} className={selectClass}>
-              <option value="">(No folder)</option>
+              <option value="">(Aucun dossier)</option>
               {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
           </div>
           <div>
             <FieldLabel>Epic</FieldLabel>
             <select {...register('epicId')} className={selectClass}>
-              <option value="">(No epic)</option>
+              <option value="">(Aucun epic)</option>
               {epics.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
           <div>
             <FieldLabel>Sprint</FieldLabel>
             <select {...register('sprintId')} className={selectClass}>
-              <option value="">Backlog (no sprint)</option>
+              <option value="">Backlog (aucun sprint)</option>
               {sprints.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.status})</option>)}
             </select>
           </div>
@@ -219,9 +219,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         {/* Assignee + Due Date */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <FieldLabel icon={<User className="w-3.5 h-3.5" />}>Assignee</FieldLabel>
+            <FieldLabel icon={<User className="w-3.5 h-3.5" />}>Assigné à</FieldLabel>
             <select {...register('assigneeId')} className={selectClass}>
-              <option value="">(Unassigned)</option>
+              <option value="">(Non assigné)</option>
               {members.map((u) => (
                 <option key={u.id} value={u.id}>
                   {[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email}
@@ -230,7 +230,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </select>
           </div>
           <div>
-            <FieldLabel icon={<Calendar className="w-3.5 h-3.5" />}>Due Date</FieldLabel>
+            <FieldLabel icon={<Calendar className="w-3.5 h-3.5" />}>Date d'échéance</FieldLabel>
             <input
               type="date"
               {...register('dueDate')}
@@ -242,7 +242,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         {/* Progress Slider */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <FieldLabel>Progress</FieldLabel>
+            <FieldLabel>Progression</FieldLabel>
             <span
               className="text-xs font-bold px-2.5 py-1 rounded-full"
               style={{
@@ -320,13 +320,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           className="flex justify-end gap-2 pt-2"
           style={{ borderTop: '1px solid var(--sp-border)' }}
         >
-          <Button variant="ghost" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" type="button" onClick={onClose}>Annuler</Button>
           <Button 
             variant="primary" 
             type="submit" 
             isLoading={isSubmitting}
           >
-            Create Task
+            Créer la tâche
           </Button>
         </div>
       </form>

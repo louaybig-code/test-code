@@ -118,7 +118,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ projectId }) => {
         setBoard(bd);
         setTasks(Array.isArray(tl) ? tl : (tl as any).tasks ?? []);
       })
-      .catch(() => toast.error('Error loading dashboard'))
+      .catch(() => toast.error('Erreur lors du chargement du tableau de bord'))
       .finally(() => setIsLoading(false));
       
     // Reset flag when project changes
@@ -157,7 +157,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ projectId }) => {
   const totalUrgent   = priorityCounts.URGENT;
 
   const exportCSV = () => {
-    if (!tasks.length) { toast.error('No tasks to export'); return; }
+    if (!tasks.length) { toast.error('Aucune tâche à exporter'); return; }
     const headers = ['ID', 'Title', 'Status', 'Priority', 'Created'];
     const rows    = tasks.map((t) => [t.id, `"${t.title}"`, t.status, t.priority, t.createdAt ?? '']);
     const csv     = 'data:text/csv;charset=utf-8,' +
@@ -166,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ projectId }) => {
       href: csv, download: `studiopilot_${projectId}.csv`,
     });
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    toast.success('CSV exported!');
+    toast.success('CSV exporté !');
   };
 
   const axisStyle = { stroke: 'var(--sp-text-muted)', fontSize: 11 };

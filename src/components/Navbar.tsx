@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Menu, Search, Plus, Kanban, ListTodo,
   Calendar as CalendarIcon, GitFork, BarChart2,
-  MessageSquare, Sun, Moon, Rocket, Home,
+  MessageSquare, Sun, Moon, Rocket, Home, Activity,
 } from 'lucide-react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { NotificationsMenu } from './NotificationsMenu';
@@ -16,6 +16,7 @@ interface NavbarProps {
   activeView: string;
   onChangeView: (view: string) => void;
   onOpenCreateTask: () => void;
+  onOpenWorkflowModal?: () => void;
   onOpenCommandBar: () => void;
   onToggleMobile: () => void;
   onOpenProfile: () => void;
@@ -25,19 +26,19 @@ interface NavbarProps {
 }
 
 const VIEWS = [
-  { id: 'kanban',    label: 'Kanban',     icon: <Kanban       className="w-3.5 h-3.5" /> },
-  { id: 'backlog',   label: 'Backlog',    icon: <Rocket       className="w-3.5 h-3.5" /> },
-  { id: 'list',      label: 'List',       icon: <ListTodo     className="w-3.5 h-3.5" /> },
-  { id: 'calendar',  label: 'Calendar',   icon: <CalendarIcon className="w-3.5 h-3.5" /> },
-  { id: 'workflow',  label: 'Workflow',   icon: <GitFork      className="w-3.5 h-3.5" /> },
-  { id: 'dashboard', label: 'Analytics',  icon: <BarChart2    className="w-3.5 h-3.5" /> },
-  { id: 'channels',  label: 'Discussion', icon: <MessageSquare className="w-3.5 h-3.5" /> },
+  { id: 'kanban',    label: 'Kanban',       icon: <Kanban        className="w-3.5 h-3.5" /> },
+  { id: 'backlog',   label: 'Backlog',      icon: <Rocket        className="w-3.5 h-3.5" /> },
+  { id: 'list',      label: 'Liste',        icon: <ListTodo      className="w-3.5 h-3.5" /> },
+  { id: 'calendar',  label: 'Calendrier',   icon: <CalendarIcon  className="w-3.5 h-3.5" /> },
+  { id: 'workflow',  label: 'Workflow',     icon: <GitFork       className="w-3.5 h-3.5" /> },
+  { id: 'stats',     label: 'Statistiques', icon: <Activity      className="w-3.5 h-3.5" /> },
+  { id: 'channels',  label: 'Discussion',   icon: <MessageSquare className="w-3.5 h-3.5" /> },
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({
   orgName, workspaceName, projectName,
   activeView, onChangeView,
-  onOpenCreateTask, onOpenCommandBar, onToggleMobile,
+  onOpenCreateTask, onOpenWorkflowModal, onOpenCommandBar, onToggleMobile,
   onOpenProfile, onClickOrg, onClickWorkspace, onClickHome,
 }) => {
   const { theme, toggleTheme } = useTheme();
@@ -93,14 +94,27 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Right — controls */}
         <div className="flex items-center gap-2 shrink-0">
           {projectName && (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={onOpenCreateTask}
-            >
-              <span className="hidden sm:inline">New</span> Task
-            </Button>
+            <>
+              {activeView === 'kanban' && onOpenWorkflowModal ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<Plus className="w-4 h-4" />}
+                  onClick={onOpenWorkflowModal}
+                >
+                  <span className="hidden sm:inline">Ajouter</span> Workflow
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<Plus className="w-4 h-4" />}
+                  onClick={onOpenCreateTask}
+                >
+                  <span className="hidden sm:inline">Nouvelle</span> Tâche
+                </Button>
+              )}
+            </>
           )}
 
           {/* Search / Cmd+K */}
@@ -115,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
           >
             <Search className="w-3.5 h-3.5" style={{ color: 'var(--sp-teal)' }} />
-            <span className="hidden md:inline">Search...</span>
+            <span className="hidden md:inline">Rechercher...</span>
             <span
               className="font-mono px-1.5 py-0.5 rounded text-[10px]"
               style={{ backgroundColor: 'var(--sp-surface-3)', color: 'var(--sp-text-muted)' }}
@@ -131,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={toggleTheme}
             className="p-2 rounded-xl transition-colors cursor-pointer"
             style={{ color: 'var(--sp-text-muted)' }}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
           >
             {theme === 'dark'
               ? <Sun  className="w-4.5 h-4.5" style={{ color: 'var(--sp-orange)' }} />

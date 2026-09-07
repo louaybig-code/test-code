@@ -172,6 +172,11 @@ export const ProjectMembersView: React.FC<ProjectMembersViewProps> = ({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
             {member.user?.firstName} {member.user?.lastName}
+            {member.source === 'organization' && (
+              <span className="ml-2 text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-normal">
+                Organisation
+              </span>
+            )}
           </p>
           <p className="text-xs text-slate-500 truncate">{member.user?.email}</p>
         </div>
@@ -223,8 +228,8 @@ export const ProjectMembersView: React.FC<ProjectMembersViewProps> = ({
           )}
         </div>
 
-        {/* Remove button — always visible for owner/admin */}
-        {canRemove && displayRole !== 'OWNER' && !isConfirming && (
+        {/* Remove button — only show for project-level members (not inherited from org) */}
+        {canRemove && displayRole !== 'OWNER' && member.source !== 'organization' && !isConfirming && (
           <button
             onClick={() => setConfirmRemoveId(member.id)}
             className="p-1.5 rounded-lg text-[var(--sp-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer shrink-0"
