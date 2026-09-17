@@ -5,7 +5,7 @@ import http from "http";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3005;
-const API_BASE = "https://evalys.admin.preprod.studiolab.fr/smash_api";
+const API_BASE = process.env.VITE_API_BASE_URL || "https://studiopilote.fr";
 
 // Handle JSON body for custom server endpoints if needed
 app.use(express.json({ limit: "50mb" }));
