@@ -1,0 +1,45 @@
+{
+  "app": {
+    "name": "Smash",
+    "tagline": "SaaS project management and team collaboration platform"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "board": "Kanban Board",
+    "backlog": "Backlog & Sprints",
+    "list": "Task List",
+    "calendar": "Calendar",
+    "channels": "Discussion Channels",
+    "workflow": "Workflow Config",
+    "search": "Search (Cmd+K)...",
+    "settings": "Settings",
+    "tokens": "API Tokens",
+    "logout": "Log Out"
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Sign Up",
+    "email": "Email Address",
+    "password": "Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "ssoGoogle": "Continue with Google",
+    "ssoMicrosoft": "Continue with Microsoft",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "common": {
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "search": "Search...",
+    "filter": "Filter",
+    "noData": "No data available",
+    "retry": "Retry",
+    "actions": "Actions",
+    "confirm": "Confirm"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "studiopilot-mobile",
+  "version": "1.0.0",
+  "description": "StudioPilot — Agile Project Management mobile app (React Native / Expo port of the StudioPilot web app)",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "web": "expo start --web",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "gen:icons": "node scripts/gen-icons.js"
+  },
+  "dependencies": {
+    "@expo-google-fonts/inter": "0.4.2",
+    "@expo-google-fonts/sora": "0.4.2",
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/native": "^7.1.25",
+    "@react-navigation/native-stack": "^7.9.0",
+    "axios": "^1.19.0",
+    "expo": "~57.0.25",
+    "expo-constants": "~57.0.19",
+    "expo-document-picker": "~57.0.2",
+    "expo-file-system": "~57.0.7",
+    "expo-font": "~57.0.4",
+    "expo-image-picker": "~57.0.20",
+    "expo-sharing": "~57.0.22",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "~0.21.0",
+    "socket.io-client": "^4.8.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "babel-preset-expo": "~57.0.13",
+    "lucide-static": "1.48.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true,
+  "overrides": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.1"
+  }
+}

@@ -1,0 +1,8 @@
+# Expo / RN
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.env.local
