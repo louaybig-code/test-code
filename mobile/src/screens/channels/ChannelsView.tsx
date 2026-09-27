@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -220,6 +221,89 @@ export const ChannelsView: React.FC<{ workspaceId: string }> = ({ workspaceId })
     }
   };
 
+  // ── channel settings: rename / members / delete (web parity) ────────────
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [renameVal, setRenameVal] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const [membersBusy, setMembersBusy] = useState(false);
+  const [addMemberVal, setAddMemberVal] = useState('');
+  const [addingMember, setAddingMember] = useState(false);
+  const [deletingChannel, setDeletingChannel] = useState(false);
+  const [confirmDeleteChannel, setConfirmDeleteChannel] = useState(false);
+
+  const openSettings = () => {
+    if (!activeChannel) return;
+    setRenameVal(activeChannel.name);
+    setConfirmDeleteChannel(false);
+    setSettingsOpen(true);
+    setMembers([]);
+    setMembersBusy(true);
+    apiService
+      .getChannelMembers(activeChannel.id)
+      .then((ms: any) => setMembers(Array.isArray(ms) ? ms : ms?.members ?? []))
+      .catch(() => setMembers([]))
+      .finally(() => setMembersBusy(false));
+  };
+
+  const handleRenameChannel = async () => {
+    if (!activeChannel || !renameVal.trim()) return;
+    setRenaming(true);
+    try {
+      await apiService.updateChannel(activeChannel.id, { name: renameVal.trim() });
+      setChannels((prev) => prev.map((c) => (c.id === activeChannel.id ? { ...c, name: renameVal.trim() } : c)));
+      toast.success('Canal renommé');
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur');
+    } finally {
+      setRenaming(false);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!activeChannel || !addMemberVal.trim()) return;
+    setAddingMember(true);
+    try {
+      // web parity: the field accepts an email or user id — sent as userId
+      await apiService.addChannelMember(activeChannel.id, { userId: addMemberVal.trim() });
+      toast.success('Membre ajouté');
+      setAddMemberVal('');
+      const ms: any = await apiService.getChannelMembers(activeChannel.id);
+      setMembers(Array.isArray(ms) ? ms : ms?.members ?? []);
+    } catch (err: any) {
+      toast.error(err.message || "Impossible d'ajouter ce membre");
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!activeChannel) return;
+    try {
+      await apiService.removeChannelMember(activeChannel.id, userId);
+      setMembers((prev) => prev.filter((m: any) => (m.userId ?? m.user?.id ?? m.id) !== userId));
+      toast.success('Membre retiré');
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur');
+    }
+  };
+
+  const handleDeleteChannel = async () => {
+    if (!activeChannel) return;
+    setDeletingChannel(true);
+    try {
+      await apiService.deleteChannel(activeChannel.id);
+      setChannels((prev) => prev.filter((c) => c.id !== activeChannel.id));
+      setSettingsOpen(false);
+      setRoom({ channelId: null });
+      toast.success('Canal supprimé');
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur');
+    } finally {
+      setDeletingChannel(false);
+    }
+  };
+
   // ── split project-linked vs team channels (like web's two sections) ──
   const projectChannels = channels.filter((c: any) => c.projectId);
   const teamChannels = channels.filter((c: any) => !c.projectId);
@@ -237,6 +321,9 @@ export const ChannelsView: React.FC<{ workspaceId: string }> = ({ workspaceId })
           <Text numberOfLines={1} style={{ flex: 1, fontSize: 15, fontFamily: FONT.inter.bold, color: colors.text }}>
             {activeChannel.name}
           </Text>
+          <Pressable onPress={openSettings} hitSlop={8} style={{ padding: 6 }} accessibilityLabel="Paramètres du canal">
+            <Icon name="Settings" size={15} color={colors.textSecondary} />
+          </Pressable>
           <Pressable onPress={handleLeave} hitSlop={8} style={{ padding: 6 }}>
             <Icon name="LogOut" size={15} color="#EF4444" />
           </Pressable>
@@ -374,6 +461,91 @@ export const ChannelsView: React.FC<{ workspaceId: string }> = ({ workspaceId })
             <Icon name="Send" size={15} color="#fff" />
           </Pressable>
         </View>
+
+        {/* channel settings sheet — rename / members / delete (web parity) */}
+        <Sheet
+          visible={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          title={`#${activeChannel?.name ?? ''}`}
+          subtitle="Paramètres du canal"
+          heightFraction={0.78}
+        >
+          <ScrollView contentContainerStyle={{ paddingBottom: 12 }} keyboardShouldPersistTaps="handled">
+            {/* rename */}
+            <Text style={[styles.setLabel, { color: colors.textSecondary }]}>Renommer</Text>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Input value={renameVal} onChangeText={setRenameVal} placeholder="Nom du canal" />
+              </View>
+              <Button onPress={handleRenameChannel} isLoading={renaming} disabled={!renameVal.trim()}>
+                OK
+              </Button>
+            </View>
+
+            {/* members */}
+            <Text style={[styles.setLabel, { color: colors.textSecondary, marginTop: 18 }]}>Membres</Text>
+            {membersBusy ? (
+              <SkeletonLines lines={2} gap={8} />
+            ) : (
+              <View style={{ gap: 6 }}>
+                {members.map((m: any) => {
+                  const u = m.user ?? m;
+                  const uid = m.userId ?? u.id ?? m.id;
+                  const label = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || 'Inconnu';
+                  return (
+                    <View key={uid} style={[styles.memberRow, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+                      <Avatar src={u.avatarUrl} firstName={u.firstName ?? undefined} lastName={u.lastName ?? undefined} email={u.email} size="sm" />
+                      <Text numberOfLines={1} style={{ flex: 1, fontSize: 13, fontFamily: FONT.inter.semibold, color: colors.text }}>
+                        {label}
+                      </Text>
+                      <Pressable onPress={() => handleRemoveMember(uid)} hitSlop={8} style={{ padding: 6 }}>
+                        <Icon name="X" size={14} color="#EF4444" />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+                {members.length === 0 && (
+                  <Text style={{ fontSize: 12, fontFamily: FONT.inter.regular, color: colors.textMuted }}>Aucun membre pour le moment.</Text>
+                )}
+              </View>
+            )}
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  value={addMemberVal}
+                  onChangeText={setAddMemberVal}
+                  placeholder="Email ou ID utilisateur"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+              <Button onPress={handleAddMember} isLoading={addingMember} disabled={!addMemberVal.trim()} icon={<Icon name="UserPlus" size={14} color="#fff" />}>
+                Ajouter
+              </Button>
+            </View>
+
+            {/* danger zone — delete channel */}
+            <Text style={[styles.setLabel, { color: colors.textSecondary, marginTop: 22 }]}>Zone dangereuse</Text>
+            {!confirmDeleteChannel ? (
+              <Pressable onPress={() => setConfirmDeleteChannel(true)} style={[styles.dangerBtn, { borderColor: 'rgba(220,38,38,0.3)' }]}>
+                <Icon name="Trash2" size={13} color="#EF4444" />
+                <Text style={{ fontSize: 12.5, fontFamily: FONT.inter.semibold, color: '#EF4444' }}>Supprimer le canal</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.dangerZone}>
+                <Text style={{ fontSize: 12, fontFamily: FONT.inter.regular, color: '#FCA5A5' }}>
+                  Supprimer définitivement « #{activeChannel?.name} » et tous ses messages ?
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                  <Button variant="ghost" onPress={() => setConfirmDeleteChannel(false)}>Annuler</Button>
+                  <Button onPress={handleDeleteChannel} isLoading={deletingChannel} style={{ backgroundColor: '#DC2626' }}>
+                    Supprimer
+                  </Button>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        </Sheet>
       </KeyboardAvoidingView>
     );
   }
@@ -569,6 +741,39 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  setLabel: {
+    fontSize: 11.5,
+    fontFamily: FONT.inter.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  dangerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(220,38,38,0.08)',
+  },
+  dangerZone: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(220,38,38,0.3)',
+    backgroundColor: 'rgba(220,38,38,0.08)',
+    padding: 12,
   },
   privateRow: {
     flexDirection: 'row',

@@ -66,6 +66,8 @@ const TaskDetailBody: React.FC<TaskDetailSheetProps> = ({ taskId, onClose }) => 
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [epicId, setEpicId] = useState<string | null>(null);
+  const [sprintId, setSprintId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [hasChanges, setHasChanges] = useState(false);
@@ -74,6 +76,8 @@ const TaskDetailBody: React.FC<TaskDetailSheetProps> = ({ taskId, onClose }) => 
   // panel data
   const [statuses, setStatuses] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
+  const [epics, setEpics] = useState<any[]>([]);
+  const [sprints, setSprints] = useState<any[]>([]);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [activity, setActivity] = useState<TaskActivity[]>([]);
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
@@ -119,6 +123,8 @@ const TaskDetailBody: React.FC<TaskDetailSheetProps> = ({ taskId, onClose }) => 
         setStatus((t as any).status ?? '');
         setPriority((t as any).priority ?? 'MEDIUM');
         setAssigneeId((t as any).assigneeId ?? null);
+        setEpicId((t as any).epicId ?? null);
+        setSprintId((t as any).sprintId ?? null);
         setDueDate((t as any).dueDate ? String(t.dueDate).slice(0, 10) : null);
         setProgress((t as any).progress ?? 0);
         setAttachments((t as any).attachments ?? []);
@@ -131,6 +137,9 @@ const TaskDetailBody: React.FC<TaskDetailSheetProps> = ({ taskId, onClose }) => 
 
     if (pjId) {
       apiService.getStatuses(pjId).then((d: any) => setStatuses(d ?? [])).catch(() => {});
+      // web parity: epic & sprint option lists for the edit selects
+      apiService.getEpics(pjId).then((d: any) => setEpics(d ?? [])).catch(() => {});
+      apiService.getSprints(pjId).then((d: any) => setSprints(d ?? [])).catch(() => {});
       apiService
         .getProjectMembers(pjId)
         .then((ms: any) => {
@@ -152,17 +161,25 @@ const TaskDetailBody: React.FC<TaskDetailSheetProps> = ({ taskId, onClose }) => 
     if (!task || !hasChanges) return;
     setSaving(true);
     try {
+      // web parity: progress goes through setTaskProgress, not updateTask
+      const progressChanged = progress !== ((task as any).progress ?? 0);
       const payload: any = {
         title: title.trim(),
         description: description.trim() || null,
         status,
         priority,
         assigneeId: assigneeId || null,
+        epicId: epicId || null,
+        sprintId: sprintId || null,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-        progress,
       };
       const updated: any = await apiService.updateTask(task.id, payload);
-      setTask((prev) => (prev ? { ...prev, ...updated } : prev));
+      if (progressChanged) {
+        try {
+          await apiService.setTaskProgress(task.id, progress);
+        } catch { /* non-fatal: field update already saved */ }
+      }
+      setTask((prev) => (prev ? { ...prev, ...updated, progress } : prev));
       setHasChanges(false);
       toast.success('Modifications enregistrées');
     } catch (err: any) {
@@ -476,6 +493,38 @@ const TaskDetailBody: React.FC<TaskDetailSheetProps> = ({ taskId, onClose }) => 
                 }),
               ]}
             />
+
+            {/* epic + sprint (web drawer parity) */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <FieldSelect
+                label="Epic"
+                value={epicId ?? ''}
+                disabled={!canEdit}
+                onChange={(v) => {
+                  setEpicId(v || null);
+                  setHasChanges(true);
+                }}
+                options={[
+                  { value: '', label: 'Aucun epic' },
+                  ...epics.map((e: any) => ({ value: e.id, label: e.name })),
+                ]}
+                style={{ flex: 1 }}
+              />
+              <FieldSelect
+                label="Sprint"
+                value={sprintId ?? ''}
+                disabled={!canEdit}
+                onChange={(v) => {
+                  setSprintId(v || null);
+                  setHasChanges(true);
+                }}
+                options={[
+                  { value: '', label: 'Aucun sprint' },
+                  ...sprints.map((s: any) => ({ value: s.id, label: s.name })),
+                ]}
+                style={{ flex: 1 }}
+              />
+            </View>
 
             {/* progress */}
             <View>

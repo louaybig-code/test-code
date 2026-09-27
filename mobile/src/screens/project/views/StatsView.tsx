@@ -45,20 +45,38 @@ export const StatsView: React.FC<{ projectId: string }> = ({ projectId }) => {
   }
 
   const s: any = stats;
-  const total = s.totalTasks ?? s.total ?? 0;
-  const completed = s.completedTasks ?? s.completed ?? s.done ?? 0;
-  const inProgress = s.inProgressTasks ?? s.inProgress ?? 0;
-  const overdue = s.overdueTasks ?? s.overdue ?? 0;
-  const completion = total > 0 ? Math.round((completed / total) * 100) : 0;
+  // web parity: the API returns { totals: {...}, byStatus: [...], byPriority: {...} }
+  const t: any = s.totals ?? s;
+  const total = t.total ?? s.totalTasks ?? 0;
+  const completed = t.completed ?? s.completedTasks ?? 0;
+  const inProgress = t.inProgress ?? s.inProgressTasks ?? 0;
+  const overdue = t.overdue ?? s.overdueTasks ?? 0;
+  const todoCount = t.todo ?? null;
+  const dueThisWeek = t.dueThisWeek ?? null;
+  const avgProgress = t.avgProgress ?? null;
+  const completion =
+    t.completionRate != null
+      ? Math.round(t.completionRate)
+      : total > 0
+        ? Math.round((completed / total) * 100)
+        : 0;
 
   const byPriorityRaw: Record<string, number> = s.byPriority ?? {};
-  const byStatusRaw: Record<string, number> = s.byStatus ?? {};
+  // web stats.byStatus is an ARRAY of { name, count, color } — accept objects too
+  const byStatusRows: Array<{ name: string; count: number; color?: string }> = Array.isArray(s.byStatus)
+    ? s.byStatus.map((r: any) => ({ name: r.name ?? r.status ?? '?', count: r.count ?? r.value ?? 0, color: r.color }))
+    : Object.entries(s.byStatus ?? {}).map(([name, count]: any) => ({ name, count: count as number }));
 
   const cards = [
     { label: 'Total', value: total, color: '#3B82F6', icon: 'ListTodo' },
     { label: 'Terminées', value: completed, color: '#10B981', icon: 'CheckCircle2' },
     { label: 'En cours', value: inProgress, color: BRAND.orange, icon: 'Clock' },
     { label: 'En retard', value: overdue, color: '#EF4444', icon: 'AlertTriangle' },
+  ];
+  const extraCards = [
+    ...(todoCount != null ? [{ label: 'À faire', value: todoCount, color: BRAND.teal, icon: 'Circle' }] : []),
+    ...(dueThisWeek != null ? [{ label: 'Échues cette semaine', value: dueThisWeek, color: '#F59E0B', icon: 'Calendar' }] : []),
+    ...(avgProgress != null ? [{ label: 'Progression moyenne', value: `${avgProgress}%`, color: '#8B5CF6', icon: 'TrendingUp' }] : []),
   ];
 
   // SVG completion ring
@@ -139,20 +157,35 @@ export const StatsView: React.FC<{ projectId: string }> = ({ projectId }) => {
         </View>
       )}
 
+      {/* extra KPI cards (web parity: todo / due-this-week / avg progress) */}
+      {extraCards.length > 0 && (
+        <View style={styles.cardsRow}>
+          {extraCards.map((c) => (
+            <View key={c.label} style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.statIcon, { backgroundColor: c.color + '1A' }]}>
+                <Icon name={c.icon as any} size={15} color={c.color} />
+              </View>
+              <Text style={[styles.statValue, { color: colors.text }]}>{c.value}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{c.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* by status */}
-      {Object.keys(byStatusRaw).length > 0 && (
+      {byStatusRows.length > 0 && (
         <View style={[styles.block, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.blockTitle, { color: colors.text }]}>Par statut</Text>
-          {Object.entries(byStatusRaw).map(([status, count]) => {
-            const max = Math.max(...Object.values(byStatusRaw), 1);
+          {byStatusRows.map((row) => {
+            const max = Math.max(...byStatusRows.map((r) => r.count), 1);
             return (
-              <View key={status} style={{ marginTop: 11 }}>
+              <View key={row.name} style={{ marginTop: 11 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text style={{ fontSize: 11.5, fontFamily: FONT.inter.semibold, color: colors.text }}>{status}</Text>
-                  <Text style={{ fontSize: 11.5, fontFamily: FONT.inter.bold, color: colors.text }}>{count}</Text>
+                  <Text style={{ fontSize: 11.5, fontFamily: FONT.inter.semibold, color: colors.text }}>{row.name}</Text>
+                  <Text style={{ fontSize: 11.5, fontFamily: FONT.inter.bold, color: colors.text }}>{row.count}</Text>
                 </View>
                 <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.surface3 }}>
-                  <View style={{ width: `${Math.max(3, (count / max) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: BRAND.orange }} />
+                  <View style={{ width: `${Math.max(3, (row.count / max) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: row.color || BRAND.orange }} />
                 </View>
               </View>
             );
