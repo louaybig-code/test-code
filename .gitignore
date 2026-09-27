@@ -7,3 +7,6 @@ coverage/
 .env*
 !.env.example
 *.md
+
+# Mobile app docs
+!mobile/README.md
