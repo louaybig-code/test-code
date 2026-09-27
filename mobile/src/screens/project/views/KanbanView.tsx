@@ -19,15 +19,17 @@ const COL_W = Math.min(SCREEN_W * 0.78, 320);
 interface KanbanViewProps {
   projectId: string;
   onOpenTask: (taskId: string) => void;
+  /** web parity: column "+" quick-creates a task with that status pre-selected */
+  onQuickCreateTask?: (statusKey: string) => void;
 }
 
 /**
  * KanbanView — port of web `KanbanBoard`.
  * Same data flow (getBoard → moveTask with optimistic update + revert) —
- * horizontal column scrolling on mobile, and long-press → "move to column"
- * as the touch adaptation of the web's drag & drop.
+ * horizontal column scrolling on mobile; the "···" button (or long-press)
+ * on a card opens the "move to column" sheet (touch drag & drop).
  */
-export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask }) => {
+export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask, onQuickCreateTask }) => {
   const { colors } = useTheme();
   const { viewRefreshKey, setActiveView } = useAppState();
   const { hasAbility, loading: permsLoading } = usePermissions();
@@ -43,7 +45,11 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask })
   const load = useCallback(async () => {
     try {
       const board: any = await apiService.getBoard(projectId);
-      setColumns(board?.columns ?? []);
+      // web parity: columns sorted by workflow status position
+      const cols: BoardColumn[] = [...(board?.columns ?? [])].sort(
+        (a, b) => (a.status.position ?? 0) - (b.status.position ?? 0)
+      );
+      setColumns(cols);
     } catch (err: any) {
       toast.error(err.message || 'Erreur de chargement du tableau');
     } finally {
@@ -117,6 +123,16 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask })
               <View style={[styles.countBadge, { backgroundColor: colors.surface2 }]}>
                 <Text style={{ fontSize: 10.5, fontFamily: FONT.inter.bold, color: colors.textMuted }}>{col.tasks.length}</Text>
               </View>
+              {!!onQuickCreateTask && (
+                <Pressable
+                  onPress={() => onQuickCreateTask(col.status.key || col.status.name.toLowerCase())}
+                  hitSlop={10}
+                  accessibilityLabel={`Créer une tâche dans ${col.status.name}`}
+                  style={[styles.colAdd, { backgroundColor: BRAND.orange08, borderColor: BRAND.orange15 }]}
+                >
+                  <Icon name="Plus" size={13} color={BRAND.orange} strokeWidth={2.6} />
+                </Pressable>
+              )}
             </View>
 
             {/* task list */}
@@ -132,6 +148,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask })
                   task={task}
                   onPress={() => onOpenTask(task.id)}
                   onLongPress={canMove ? () => setMovingTask(task) : undefined}
+                  onMore={canMove ? () => setMovingTask(task) : undefined}
                 />
               ))}
               {col.tasks.length === 0 && (
@@ -142,7 +159,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask })
             </ScrollView>
 
             {canMove && (
-              <Text style={styles.hint}>Appui long sur une carte pour la déplacer</Text>
+              <Text style={styles.hint}>⋮ ou appui long sur une carte pour la déplacer</Text>
             )}
           </View>
         ))}
@@ -237,6 +254,15 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     paddingHorizontal: 7,
     paddingVertical: 2,
+  },
+  colAdd: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
   },
   emptyCol: {
     alignItems: 'center',

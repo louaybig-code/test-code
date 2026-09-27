@@ -11,6 +11,8 @@ interface TaskCardProps {
   task: Task;
   onPress?: () => void;
   onLongPress?: () => void;
+  /** Visible "···" actions button (opens move/actions sheet — easier to discover than long-press) */
+  onMore?: () => void;
   compact?: boolean;
   archived?: boolean;
 }
@@ -25,7 +27,7 @@ const PIcon: React.FC<{ p?: Task['priority']; size?: number }> = ({ p, size = 14
  * TaskCard — mobile port of the web task card used in Kanban/List/Backlog:
  * title, priority flag, due date, subtask progress, assignee avatar, favorite star.
  */
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, onLongPress, compact, archived }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, onLongPress, onMore, compact, archived }) => {
   const { colors, isDark } = useTheme();
   const sub = (task as any).subtasks?.filter((s: any) => s.completed)?.length ?? 0;
   const subTotal = (task as any).subtasks?.length ?? 0;
@@ -51,6 +53,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, onLongPress, 
           {task.title}
         </Text>
         {(task as any).isFavorite && <Icon name="Star" size={12} color="#F59E0B" strokeWidth={2} />}
+        {!!onMore && (
+          <Pressable
+            onPress={onMore}
+            hitSlop={10}
+            accessibilityLabel="Actions de la tâche"
+            style={[styles.moreBtn, { backgroundColor: colors.surface2 }]}
+          >
+            <Icon name="MoreVertical" size={13} color={colors.textMuted} />
+          </Pressable>
+        )}
       </View>
 
       {!!task.description && !compact && (
@@ -142,5 +154,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
+  },
+  moreBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -2,
+    marginRight: -4,
   },
 });

@@ -38,6 +38,7 @@ export const AppShell: React.FC = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [taskDetailId, setTaskDetailId] = useState<string | null>(null);
+  const [createTaskPreset, setCreateTaskPreset] = useState<string | null>(null);
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const [createWsOpen, setCreateWsOpen] = useState(false);
   const [orgSettingsOpen, setOrgSettingsOpen] = useState(false);
@@ -51,7 +52,10 @@ export const AppShell: React.FC = () => {
     content = (
       <ProjectScreen
         onOpenTask={(id) => setTaskDetailId(id)}
-        onOpenCreateTask={() => setCreateTaskOpen(true)}
+        onOpenCreateTask={(statusKey) => {
+          setCreateTaskPreset(statusKey ?? null);
+          setCreateTaskOpen(true);
+        }}
       />
     );
   } else if (activeScreen === 'workspace' && activeOrg && activeWorkspace) {
@@ -104,7 +108,7 @@ export const AppShell: React.FC = () => {
       <NotificationsScreen visible={notifOpen} onClose={() => setNotifOpen(false)} onOpenTask={(id) => { setNotifOpen(false); setTaskDetailId(id); }} />
       <SearchScreen visible={searchOpen} onClose={() => setSearchOpen(false)} onOpenTask={(id) => { setSearchOpen(false); setTaskDetailId(id); }} />
       <ProfileScreen visible={profileOpen} onClose={() => setProfileOpen(false)} />
-      <CreateTaskSheet visible={createTaskOpen} onClose={() => setCreateTaskOpen(false)} />
+      <CreateTaskSheet visible={createTaskOpen} initialStatus={createTaskPreset} onClose={() => setCreateTaskOpen(false)} />
       <TaskDetailSheet taskId={taskDetailId} onClose={() => setTaskDetailId(null)} />
       <CreateProjectSheet visible={createProjectOpen} onClose={() => setCreateProjectOpen(false)} />
       <CreateWorkspaceSheet visible={createWsOpen} onClose={() => setCreateWsOpen(false)} />

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -9,6 +8,7 @@ import {
   Pressable as RNPressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,7 +46,7 @@ export const Sheet: React.FC<SheetProps> = ({
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const screenH = Dimensions.get('window').height;
+  const { height: screenH } = useWindowDimensions();
   const slide = useRef(new Animated.Value(screenH)).current;
   const fade = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(visible);
@@ -75,7 +75,7 @@ export const Sheet: React.FC<SheetProps> = ({
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         </Animated.View>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.kav}
           pointerEvents="box-none"
         >

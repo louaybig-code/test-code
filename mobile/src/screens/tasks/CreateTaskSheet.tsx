@@ -20,7 +20,14 @@ import { Epic, ProjectFolder, ProjectStatus, Sprint, UserProfile } from '../../t
  * epic/sprint/folder, due date + progress. Members fall back to an empty
  * state when the API can't provide them (no fake data).
  */
-export const CreateTaskSheet: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+interface CreateTaskSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  /** Pre-selected status (kanban column quick-create, like web onQuickCreateTask) */
+  initialStatus?: string | null;
+}
+
+export const CreateTaskSheet: React.FC<CreateTaskSheetProps> = ({ visible, onClose, initialStatus }) => {
   const { colors } = useTheme();
   const { activeProject, triggerViewRefresh } = useAppState();
   const projectId = activeProject?.id ?? null;
@@ -49,7 +56,18 @@ export const CreateTaskSheet: React.FC<{ visible: boolean; onClose: () => void }
     if (!visible || !projectId) return;
     apiService.getStatuses(projectId).then((st: any) => {
       setStatuses(st ?? []);
-      if (st?.length) setStatus((cur) => (st.find((s: ProjectStatus) => s.id === cur || s.key === cur) ? cur : st[0].id));
+      if (st?.length) {
+        setStatus((cur) => {
+          // priority: column quick-create preset > keep current > first status
+          // NOTE: like the web, status values are KEYS (s.key || name.toLowerCase()), not ids
+          const keyOf = (s: ProjectStatus) => s.key || (s.name ?? '').toLowerCase();
+          if (initialStatus) {
+            const hit = st.find((s: ProjectStatus) => s.id === initialStatus || s.key === initialStatus);
+            if (hit) return keyOf(hit);
+          }
+          return st.find((s: ProjectStatus) => keyOf(s) === cur) ? cur : keyOf(st[0]);
+        });
+      }
     }).catch(() => {});
     apiService.getProjectFolders(projectId).then((f: any) => setFolders(f ?? [])).catch(() => {});
     apiService.getEpics(projectId).then((e: any) => setEpics(e ?? [])).catch(() => {});
@@ -134,7 +152,7 @@ export const CreateTaskSheet: React.FC<{ visible: boolean; onClose: () => void }
             value={status}
             onChange={setStatus}
             options={(statuses.length ? statuses : [{ id: 'todo', key: 'todo', name: 'À faire', color: '#1A8C8C' } as any]).map((s: ProjectStatus) => ({
-              value: s.id ?? s.key,
+              value: s.key || (s.name ?? '').toLowerCase(),
               label: s.name,
               color: s.color,
             }))}

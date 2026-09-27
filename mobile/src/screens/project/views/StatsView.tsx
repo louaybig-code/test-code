@@ -27,7 +27,8 @@ export const StatsView: React.FC<{ projectId: string }> = ({ projectId }) => {
     setLoading(true);
     apiService
       .getProjectStats(projectId)
-      .then((s: any) => setStats(s))
+      // web parity: handle wrapped response (response?.data || response)
+      .then((s: any) => setStats(s?.data ?? s))
       .catch((err: any) => toast.error(err.message || 'Erreur de chargement des statistiques'))
       .finally(() => setLoading(false));
   }, [projectId, viewRefreshKey]);
