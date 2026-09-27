@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { apiService } from '../../../services/api';
 import { usePermissions } from '../../../context/PermissionsContext';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -33,6 +33,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask, o
   const { colors } = useTheme();
   const { viewRefreshKey, setActiveView } = useAppState();
   const { hasAbility, loading: permsLoading } = usePermissions();
+  const { height: winH } = useWindowDimensions();
+  // columns' task list adapts to the screen height (no cut-off content)
+  const listMaxH = Math.max(280, winH - 330);
 
   const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +112,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask, o
         horizontal
         pagingEnabled={false}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ padding: 14, gap: 12 }}
+        contentContainerStyle={{ padding: 14, gap: 12, paddingBottom: 96 }}
         style={{ backgroundColor: colors.bg }}
       >
         {columns.map((col) => (
@@ -139,7 +142,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ projectId, onOpenTask, o
             <ScrollView
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
-              style={{ maxHeight: 520 }}
+              style={{ maxHeight: listMaxH }}
               contentContainerStyle={{ gap: 8, paddingBottom: 8 }}
             >
               {col.tasks.map((task) => (

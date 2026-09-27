@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FONT, RADIUS } from '../../theme/tokens';
+import { FONT, PHONE_FRAME_W, RADIUS } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import { Icon } from '../Icon';
 
@@ -46,7 +46,11 @@ export const Sheet: React.FC<SheetProps> = ({
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { height: screenH } = useWindowDimensions();
+  const { height: screenH, width: screenW } = useWindowDimensions();
+  // On desktop web the Modal spans the full browser window — cap the sheet
+  // to the phone-frame width so it stays "inside the phone".
+  const sheetMaxW =
+    Platform.OS === 'web' && screenW > PHONE_FRAME_W ? PHONE_FRAME_W : undefined;
   const slide = useRef(new Animated.Value(screenH)).current;
   const fade = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(visible);
@@ -87,6 +91,7 @@ export const Sheet: React.FC<SheetProps> = ({
                 borderColor: colors.border,
                 maxHeight: screenH * (autoHeight ? 0.88 : heightFraction),
                 height: autoHeight ? undefined : screenH * heightFraction,
+                maxWidth: sheetMaxW,
                 transform: [{ translateY: slide }],
                 paddingBottom: Math.max(insets.bottom, 12),
               },
@@ -133,8 +138,10 @@ const styles = StyleSheet.create({
   kav: {
     flex: 1,
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   sheet: {
+    width: '100%',
     borderTopLeftRadius: RADIUS.xxl,
     borderTopRightRadius: RADIUS.xxl,
     borderWidth: 1,

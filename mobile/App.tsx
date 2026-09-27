@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -24,7 +24,7 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AppStateProvider } from './src/state/AppStateContext';
 import { ToastHost } from './src/components/toast';
-import { FONT } from './src/theme/tokens';
+import { FONT, PHONE_FRAME_W } from './src/theme/tokens';
 import { Logo } from './src/components/Logo';
 import { AuthScreen } from './src/screens/auth/AuthScreen';
 import { AppShell } from './src/shell/AppShell';
@@ -36,6 +36,30 @@ const BootSplash: React.FC = () => {
     <View style={[styles.boot, { backgroundColor: colors.bg }]}>
       <Logo width={150} height={32} />
       <ActivityIndicator color="#E8531A" style={{ marginTop: 24 }} />
+    </View>
+  );
+};
+
+/**
+ * WebFrame — on desktop web the app renders inside a centered phone-width
+ * frame (so absolute elements like the FAB, drawer and toasts stay inside
+ * the "screen"); on native or narrow windows it's a no-op pass-through.
+ */
+const WebFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { width } = useWindowDimensions();
+  const { colors } = useTheme();
+  const framed = Platform.OS === 'web' && width > 640;
+  if (!framed) return <View style={{ flex: 1 }}>{children}</View>;
+  return (
+    <View style={[styles.frameOuter, { backgroundColor: colors.surface2 }]}>
+      <View
+        style={[
+          styles.frameInner,
+          { width: PHONE_FRAME_W, borderColor: colors.border, backgroundColor: colors.bg },
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 };
@@ -75,8 +99,10 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <ThemedStatusBar />
-          <Root />
-          <ToastHost />
+          <WebFrame>
+            <Root />
+            <ToastHost />
+          </WebFrame>
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
@@ -93,5 +119,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  frameOuter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  frameInner: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    overflow: 'hidden',
   },
 });

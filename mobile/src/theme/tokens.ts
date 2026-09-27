@@ -83,6 +83,9 @@ export const DARK: SchemeColors = {
 };
 
 /** Auth screens / sidebars in the web app use these fixed deep-charcoal values. */
+/** Width of the "phone screen" when previewing the app on desktop web (px). */
+export const PHONE_FRAME_W = 430;
+
 export const FIXED = {
   authBg: '#131620',
   card: '#1C2033',

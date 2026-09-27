@@ -238,7 +238,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ projectId, onOpenTask 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8531A" colors={['#E8531A']} />}
       >
         {/* ── Epic filter chips + actions ── */}

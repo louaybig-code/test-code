@@ -70,7 +70,7 @@ export const CalendarView: React.FC<{ projectId: string; onOpenTask: (taskId: st
   const selectedTasks = byDay.get(selectedDay) ?? [];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 96 }}>
       {/* header nav */}
       <View style={styles.nav}>
         <Pressable

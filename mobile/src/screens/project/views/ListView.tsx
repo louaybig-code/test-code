@@ -105,7 +105,7 @@ export const ListView: React.FC<{ projectId: string; onOpenTask: (taskId: string
 
       {/* tasks */}
       <ScrollView
-        contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 60 }}
+        contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 96 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#E8531A" colors={['#E8531A']} />}
       >
         {loading ? (
