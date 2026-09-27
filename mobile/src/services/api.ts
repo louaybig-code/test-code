@@ -60,7 +60,12 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for CORS with cookies (same as web)
+  // Mobile authenticates with Bearer tokens ONLY — never cookies.
+  // In the web build, withCredentials:true would attach the browser's
+  // studiopilote.fr cookies (possibly an expired session cookie), and the
+  // backend can then reject requests — including /auth/login — with
+  // "Invalid token" 401s. Native apps send no cookies, so login works there.
+  withCredentials: false,
 });
 
 // In-memory token storage + persistent backup so it survives app restarts
@@ -325,6 +330,12 @@ function getErrorMessage(error: any): string {
 
   // For UNAUTHORIZED errors
   if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
+    // …except on the auth endpoints themselves, where a 401 means
+    // "wrong email/password", not an expired session.
+    const url: string = error.config?.url || error.response?.config?.url || '';
+    if (url.includes('/auth/login') || url.includes('/auth/register')) {
+      return 'Email ou mot de passe incorrect';
+    }
     return 'Session expirée, veuillez vous reconnecter';
   }
 

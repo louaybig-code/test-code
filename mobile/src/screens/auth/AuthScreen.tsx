@@ -84,7 +84,7 @@ export const AuthScreen: React.FC = () => {
     setIsSubmitting(true);
     try {
       if (mode === 'login') {
-        await login(email.toLowerCase(), password);
+        await login(email.trim().toLowerCase(), password);
       } else {
         await register(email.toLowerCase(), password, firstName.trim(), lastName.trim());
       }
