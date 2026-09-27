@@ -189,6 +189,19 @@ api.interceptors.response.use(
       }
     }
 
+    // Dev diagnostics: precise failure info in the JS console
+    // (Metro console on native, browser console on web) — helps spot
+    // CORS blocks ('Network Error' with no status) vs real HTTP errors.
+    if (__DEV__) {
+      console.warn(
+        '[api] request failed:',
+        (error.config?.method || 'GET').toUpperCase(),
+        error.config?.url,
+        '→',
+        error.response?.status ?? 'NETWORK-ERROR (no response — CORS/host unreachable?)'
+      );
+    }
+
     return Promise.reject(error);
   }
 );

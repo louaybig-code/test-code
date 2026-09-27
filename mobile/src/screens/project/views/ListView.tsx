@@ -28,6 +28,22 @@ export const ListView: React.FC<{ projectId: string; onOpenTask: (taskId: string
   const [search, setSearch] = useState('');
   const [priority, setPriority] = useState<string | null>(null);
   const [archivedOpen, setArchivedOpen] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  // web parity: restore an archived task
+  const handleRestore = async (taskId: string) => {
+    if (restoringId) return;
+    setRestoringId(taskId);
+    try {
+      await apiService.restoreTask(taskId);
+      toast.success('Tâche restaurée');
+      load();
+    } catch (err: any) {
+      toast.error(err?.message || 'Erreur lors de la restauration');
+    } finally {
+      setRestoringId(null);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -124,7 +140,25 @@ export const ListView: React.FC<{ projectId: string; onOpenTask: (taskId: string
                 {archived.length} archivée{archived.length !== 1 ? 's' : ''}
               </Text>
             </Pressable>
-            {archivedOpen && archived.map((t) => <TaskCard key={t.id} task={t} archived onPress={() => onOpenTask(t.id)} />)}
+            {archivedOpen &&
+              archived.map((t) => (
+                <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <TaskCard task={t} archived onPress={() => onOpenTask(t.id)} />
+                  </View>
+                  {/* web parity: restore button on archived rows */}
+                  <Pressable
+                    onPress={() => handleRestore(t.id)}
+                    disabled={restoringId === t.id}
+                    style={[styles.restoreBtn, { backgroundColor: colors.surface2, borderColor: colors.border }]}
+                  >
+                    <Icon name="RotateCcw" size={13} color={BRAND.teal} />
+                    <Text style={{ fontSize: 11, fontFamily: FONT.inter.semibold, color: BRAND.teal }}>
+                      {restoringId === t.id ? '…' : 'Restaurer'}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
           </>
         )}
       </ScrollView>
@@ -153,6 +187,15 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: RADIUS.full,
     borderWidth: 1,
+  },
+  restoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   archivedToggle: {
     flexDirection: 'row',
